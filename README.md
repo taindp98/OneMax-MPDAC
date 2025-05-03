@@ -1,10 +1,7 @@
 <h1>
-    <p align="center">
-        Multi-parameter Control for the (1+($\lambda$, $\lambda$))-GA on OneMax
+    <p align="center"> Multi-parameter Control for the (1+($\lambda$, $\lambda$))-GA on OneMax
     </p>
 </h1>
-
-
 
 ## 🗒️ Table of Contents
 
