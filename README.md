@@ -34,6 +34,7 @@ OneMax-MPDAC/
 │   ├── models                      # Two fashions of DDQN used for training
 │   │   ├── combinatorial_ddqn.py   # Combinatorial action space
 │   │   └── factored_ddqn.py        # Factored action space
+│   ├── derive_mp_policy.py         # Contains functions to derive new multi-parameter control policy
 ├── requirements.txt                # List of dependencies
 ├── README.md                       # Project readme file
 └── LICENSE                         # License for the project
@@ -81,7 +82,7 @@ The implementation of these families of DDQN can be found in [models](onemax_mpd
 
 ```bash
 python onemax_mpdac/train.py    \   ## Main Python script for training
-    ----out-dir outputs         \   ## Set output directory
+    --out-dir outputs         \   ## Set output directory
     --config-file onemax_mpdac/configs/onemax_n100_cmp.yml \    ## For problem size of 100 and don't use the reward shifting
     --gamma 0.99                \   ## Set the value of discount factor
     --seed 1 \                  ## Set random seed
@@ -92,7 +93,7 @@ python onemax_mpdac/train.py    \   ## Main Python script for training
 
 ```bash
 python onemax_mpdac/train.py    \   ## Main Python script for training
-    ----out-dir outputs         \   ## Set output directory
+    --out-dir outputs         \   ## Set output directory
     --config-file onemax_mpdac/configs/onemax_n100_fmp.yml \    ## For problem size of 100 and don't use the reward shifting
     --gamma 0.99                \   ## Set the value of discount factor
     --seed 1 \                  ## Set random seed
@@ -100,6 +101,17 @@ python onemax_mpdac/train.py    \   ## Main Python script for training
 ```
 
 **Note**: In case you'd like to use reward shifting mechanism, simply replace the configuration file by adding `as` at the end, for instance: `onemax_n100_cmp_as.yml`. 
+
+### Derive multi-parameter control policy
+
+```bash
+python onemax_mpdac/derive_mp_policy.py    \
+    --n 10000   \   ## Indicate the tested problem size
+    --type lbd1_alpha_lbd2  \   ## Set of parameters controlled by the proposed symbolic functions
+    --is-discrete   \   ## Discretize the population size's choices following a pre-defined portfolio
+```
+
+**Note**: the policy and runtime should be found at `outputs/discrete_derived_policies/n10000#lbd1_alpha_lbd2.pth`.
 
 ### Logs
 

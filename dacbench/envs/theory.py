@@ -671,8 +671,6 @@ class RLSTheoryEnv(AbstractEnv):
 class OLLGATheoryEnv(AbstractEnv):
     """
     Environment for (1+(lbd,lbd))-GA with population size.
-
-    Current assumption: we only consider (1+(lbd,lbd))-GAS, so there's only one parameter to tune (lbd)
     """
 
     def __init__(self, config, test_env=False) -> None:
