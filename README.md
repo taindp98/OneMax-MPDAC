@@ -111,7 +111,7 @@ python onemax_mpdac/derive_mp_policy.py    \
     --is-discrete   \   ## Discretize the population size's choices following a pre-defined portfolio
 ```
 
-**Note**: the policy and runtime should be found at `outputs/discrete_derived_policies/n10000#lbd1_alpha_lbd2.pth`.
+**Note**: the policy and runtime should be found at `outputs/discrete_derived_policies/n10000#lbd1_alpha_lbd2.pth`. Concerning the arguments, the `lbd1` denotes the offspring population size of mutation phase, `alpha` represents the mutation rate coefficient, and `lbd2` represents for the offspring population size of crossover phase.
 
 ### Logs
 
