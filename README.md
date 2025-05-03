@@ -84,7 +84,7 @@ The implementation of these families of DDQN can be found in [models](onemax_mpd
 python onemax_mpdac/train.py    \   ## Main Python script for training
     --out-dir outputs         \   ## Set output directory
     --config-file onemax_mpdac/configs/onemax_n100_cmp.yml \    ## For problem size of 100 and don't use the reward shifting
-    --gamma 0.99                \   ## Set the value of discount factor
+    --gamma 0.9998                \   ## Set the value of discount factor
     --seed 1 \                  ## Set random seed
     --n-cpus 4                  ## Set number of CPUs for parallel processing
 ```
@@ -95,7 +95,7 @@ python onemax_mpdac/train.py    \   ## Main Python script for training
 python onemax_mpdac/train.py    \   ## Main Python script for training
     --out-dir outputs         \   ## Set output directory
     --config-file onemax_mpdac/configs/onemax_n100_fmp.yml \    ## For problem size of 100 and don't use the reward shifting
-    --gamma 0.99                \   ## Set the value of discount factor
+    --gamma 0.9998                \   ## Set the value of discount factor
     --seed 1 \                  ## Set random seed
     --n-cpus 4                  ## Set number of CPUs for parallel processing
 ```
