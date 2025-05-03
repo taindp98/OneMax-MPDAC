@@ -2,7 +2,7 @@ import os
 from typing import Optional
 import numpy as np
 from joblib import Parallel, delayed
-from utils import make_env
+from onemax_mpdac.utils import make_env
 from tqdm import tqdm
 
 
