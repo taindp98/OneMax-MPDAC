@@ -26,7 +26,7 @@ OneMax-MPDAC/
 │   └── test.ipynb                  # Testing on-the-fly using trained DDQNs
 ├── resources/                      # Additional resources for this project
 │   ├── ddqn_ckpts                  # Contains DDQNs checkpoints for all problem sizes
-│   ├── other_methods               # Contains the policies and runtimes of irace-based tuning and other methods
+│   ├── runtimes                    # Contains the runtimes of irace-based tuning and other methods
 ├── dacbench/                       # Source code for the DACBench.
 ├── onemax_mpdac/                   # Source code for the project
 │   ├── train.py                    # Script to train models
