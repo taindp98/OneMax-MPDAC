@@ -14,7 +14,7 @@
 
 In this repository, we are developing two types of deep Q-Network (DQN) architectures: combinatorial and factored action space representation. These architectures are designed to train a multi-parameter control policy that can dynamically control four parameters of (1+($\lambda$, $\lambda$))-GA, which is an optimization algorithm for the OneMax problem.
 
-We extend the [DACBench](https://github.com/automl/DACBench) package by introducing the (1+($\lambda$, $\lambda$))-GA algorithm on the OneMax problem. See [README](dacbench/README.md).
+We extend the [DACBench](https://github.com/automl/DACBench) package by developing the (1+($\lambda$, $\lambda$))-GA algorithm on the OneMax problem. See [README](dacbench/README.md) for your references.
 
 ## 🎯 Repository Structure
 
@@ -87,7 +87,7 @@ We provide the runtimes of other methods including: `theory`, `irace`, `onefifth
 | $n=1500$    | 9970.525 (654.38)           | 8431.068 (437.00)| 10396.701 (714.40)| 9314.041 (619.95)    | **7456.682** (429.22)|
 | $n=2000$    | 13361.918 (777.03)          | 11332.382 (510.54)| 14016.436 (830.14)| 13216.518 (812.35)   | **10324.969** (575.38)|
 
-More detail, please check [README](./resources/README.md).
+Detail of baselines, please check [README](./resources/README.md).
 
 ### Training
 We divide our experiments into two groups:
@@ -96,7 +96,7 @@ We divide our experiments into two groups:
 
 The implementation of these families of DDQN can be found in [models](onemax_mpdac/models).
 
-### Experiment with the combinatorial action space
+#### Experiment with the combinatorial action space
 
 ```bash
 python onemax_mpdac/train.py    \   ## Main Python script for training
@@ -107,7 +107,7 @@ python onemax_mpdac/train.py    \   ## Main Python script for training
     --n-cpus 4                  ## Set number of CPUs for parallel processing
 ```
 
-### Experiment with the factored action space
+#### Experiment with the factored action space
 
 ```bash
 python onemax_mpdac/train.py    \   ## Main Python script for training
@@ -120,7 +120,7 @@ python onemax_mpdac/train.py    \   ## Main Python script for training
 
 **Note**: In case you'd like to use reward shifting mechanism, simply replace the configuration file by adding `as` at the end, for instance: `onemax_n100_cmp_as.yml`. 
 
-### Derive multi-parameter control policy
+## Derive multi-parameter control policy
 
 ```bash
 python onemax_mpdac/derive_mp_policy.py    \

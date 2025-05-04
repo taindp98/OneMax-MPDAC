@@ -1,8 +1,5 @@
 from torch.utils.tensorboard import SummaryWriter
 import wandb
-from PIL import Image
-import numpy as np
-import os
 
 
 class Logger:

@@ -1,7 +1,7 @@
 import numpy as np
 from tqdm import tqdm
 from joblib import Parallel, delayed
-from onemax_mpdac.eval import ollga_mp_single_run
+from onemax_mpdac.eval import ollga_multi_param
 import torch
 import os
 
@@ -31,8 +31,9 @@ if __name__ == "__main__":
         "seed": 123,
     }
     eval_env_params = {"reward_choice": "minus_evals", "cutoff": 100000.0}
-    portfolio = [1, 2, 4, 8, 16, 32, 64]
-
+    # portfolio = [1, 2, 4, 8, 16, 32, 64]
+    portfolio_size = int(np.ceil(np.log2(n)))
+    portfolio = [int(np.power(2, i)) for i in range(portfolio_size)]
     theory_policy = [np.sqrt(n / (n - i)) for i in range(n)]
     theory_policy = [
         int(np.ceil(v)) if v - np.floor(v) > 0.5 else int(np.floor(v))
@@ -63,16 +64,7 @@ if __name__ == "__main__":
                 alpha.append(1)
         alpha = np.array(alpha)
         beta = np.ones(n)
-        policy = []
-        for i in range(n):
-            policy.append(
-                [
-                    np.int64(lbd1[i]),
-                    np.float64(alpha[i]),
-                    np.int64(lbd2[i]),
-                    np.float64(beta[i]),
-                ]
-            )
+
     elif args.type == "lbd1":
         lbd1 = []
         for sol in range(n):
@@ -83,16 +75,7 @@ if __name__ == "__main__":
         lbd2 = lbd1
         alpha = np.ones(n)
         beta = np.ones(n)
-        policy = []
-        for i in range(n):
-            policy.append(
-                [
-                    np.int64(lbd1[i]),
-                    np.float64(alpha[i]),
-                    np.int64(lbd2[i]),
-                    np.float64(beta[i]),
-                ]
-            )
+
     elif args.type == "alpha":
         lbd1 = theory_policy
         lbd2 = lbd1
@@ -104,31 +87,13 @@ if __name__ == "__main__":
                 alpha.append(1)
         alpha = np.array(alpha)
         beta = np.ones(n)
-        policy = []
-        for i in range(n):
-            policy.append(
-                [
-                    np.int64(lbd1[i]),
-                    np.float64(alpha[i]),
-                    np.int64(lbd2[i]),
-                    np.float64(beta[i]),
-                ]
-            )
+
     elif args.type == "lbd2":
         lbd1 = theory_policy
         lbd2 = 2 * theory_policy
         alpha = np.ones(n)
         beta = np.ones(n)
-        policy = []
-        for i in range(n):
-            policy.append(
-                [
-                    np.int64(lbd1[i]),
-                    np.float64(alpha[i]),
-                    np.int64(lbd2[i]),
-                    np.float64(beta[i]),
-                ]
-            )
+
     elif args.type == "lbd1_alpha":
         lbd1 = []
         for sol in range(n):
@@ -145,16 +110,7 @@ if __name__ == "__main__":
                 alpha.append(1)
         alpha = np.array(alpha)
         beta = np.ones(n)
-        policy = []
-        for i in range(n):
-            policy.append(
-                [
-                    np.int64(lbd1[i]),
-                    np.float64(alpha[i]),
-                    np.int64(lbd2[i]),
-                    np.float64(beta[i]),
-                ]
-            )
+
     elif args.type == "lbd1_lbd2":
         lbd1 = []
         for sol in range(n):
@@ -165,16 +121,7 @@ if __name__ == "__main__":
         lbd2 = 2 * theory_policy
         alpha = np.ones(n)
         beta = np.ones(n)
-        policy = []
-        for i in range(n):
-            policy.append(
-                [
-                    np.int64(lbd1[i]),
-                    np.float64(alpha[i]),
-                    np.int64(lbd2[i]),
-                    np.float64(beta[i]),
-                ]
-            )
+
     elif args.type == "alpha_lbd2":
         lbd1 = theory_policy
         lbd2 = 2 * theory_policy
@@ -186,21 +133,23 @@ if __name__ == "__main__":
                 alpha.append(1)
         alpha = np.array(alpha)
         beta = np.ones(n)
-        policy = []
-        for i in range(n):
-            policy.append(
-                [
-                    np.int64(lbd1[i]),
-                    np.float64(alpha[i]),
-                    np.int64(lbd2[i]),
-                    np.float64(beta[i]),
-                ]
-            )
+
     else:
         raise ValueError("Invalid type of policy")
 
-    runtimes = Parallel(n_jobs=20)(
-        delayed(ollga_mp_single_run)(bench_params, eval_env_params, policy, i)
+    policy = []
+    for i in range(n):
+        policy.append(
+            [
+                np.int64(lbd1[i]),
+                np.float64(alpha[i]),
+                np.int64(lbd2[i]),
+                np.float64(beta[i]),
+            ]
+        )
+
+    runtimes = Parallel(n_jobs=4)(
+        delayed(ollga_multi_param)(bench_params, eval_env_params, policy, i)
         for i in tqdm(
             range(1000),
             desc=f"Running problem: n={n}",

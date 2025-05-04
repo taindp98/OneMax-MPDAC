@@ -43,8 +43,6 @@ def main():
         train_env_params,
         eval_env_params,
     ) = read_config(config_yml_fn)
-    if exp_params["n_cores"] > 1:
-        print("WARNING: n_cores>1 is not yet supported")
 
     # create output folder
     out_dir = args.out_dir
@@ -96,9 +94,6 @@ def main():
         batch_size=agent_params["batch_size"],
         log_level=exp_params["log_level"],
     )
-
-    total_time = time.time() - start_time
-    print(f"Total runtime: {total_time}")
 
 
 if __name__ == "__main__":

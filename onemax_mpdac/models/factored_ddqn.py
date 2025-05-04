@@ -16,7 +16,7 @@ from onemax_mpdac.utils import plot_policies
 from onemax_mpdac.loggers import Logger
 from onemax_mpdac.utils import load_config, object_to_dict
 from joblib import Parallel, delayed
-from onemax_mpdac.eval import OneMaxFactEval, ollga_mp_single_run
+from onemax_mpdac.eval import OneMaxFactEval, ollga_multi_param
 from onemax_mpdac.utils import get_time_str
 
 
@@ -159,7 +159,7 @@ class ReplayBuffer:
 
 class FactoredDDQN:
     """
-    Simple double DQN Agent
+    Factored Deep Q-Network
     """
 
     def __init__(
@@ -182,7 +182,7 @@ class FactoredDDQN:
         net_arch: list = [50, 50],
     ):
         """
-        Initialize the DQN Agent
+        Initialize the FactoredDDQN Agent
         :param state_dim: dimensionality of the input states
         :param action_dim: dimensionality of the output actions
         :param gamma: discount factor
@@ -553,6 +553,7 @@ class FactoredDDQN:
         eval_timesteps = np.array(eval_data["eval_timesteps"])
         top_k_min_indices = np.argsort(eval_runtime_means)[:topk]
 
+        top_k_runtimes = []
         runtime_means = []
         runtime_stds = []
         policies = []
@@ -561,7 +562,7 @@ class FactoredDDQN:
         for step in top_k_min_indices:
             policy = eval_policies[step][0]
             runtimes = Parallel(n_jobs=n_cpus)(
-                delayed(ollga_mp_single_run)(
+                delayed(ollga_multi_param)(
                     self.bench_params, self.eval_env_params, policy, i
                 )
                 for i in tqdm(
@@ -570,7 +571,7 @@ class FactoredDDQN:
                     disable=False,
                 )
             )
-
+            top_k_runtimes.append(runtimes)
             runtime_means.append(np.mean(runtimes))
             runtime_stds.append(np.std(runtimes))
             policies.append(policy)
@@ -580,6 +581,7 @@ class FactoredDDQN:
             file=save_fname,
             n_steps=steps,
             eval_policies=policies,
+            eval_runtimes=top_k_runtimes,
             eval_runtime_means=runtime_means,
             eval_runtime_stds=runtime_stds,
         )
