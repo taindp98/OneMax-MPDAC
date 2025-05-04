@@ -66,7 +66,7 @@ pip install -r requirements.txt
 ````
 ## 🚀 Quickstart
 ### Testing
-We provide the best checkpoints of DDQNs, which are trained using the best settings of reward functions in certain problem sizes at `resources/ddqn_ckpts`.
+We provide the best checkpoints of DDQNs, which are trained using the best settings of: {factored representation, adaptive reward shifting, `discount_factor=0.9998` } in certain problem sizes at `resources/ddqn_ckpts`.
 
 To replicate the results reported in the paper, follow the notebook [test.ipynb](notebooks/test.ipynb):
 1. Initialize the DDQN and OneMax environment objects.
