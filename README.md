@@ -75,6 +75,16 @@ To replicate the results reported in the paper, follow the notebook [test.ipynb]
 
 **Note**: Please make sure you have the notebook kernel installed with the necessary packages.
 
+### Baseline and Comparison
+We provide the runtimes of other methods including: `theory`, `irace`, `onefifth`, and `rl_dac`
+
+1. `theory`: theory-derived policy across 13 problem sizes, ranging from 100 to 40000.
+2. `irace`: static configuration tuned using irace across 13 problem sizes, ranging from 100 to 40000.
+3. `onefifth`: population size (lambda) is self-adjusted based on the one-fifth success rule across 6 problem sizes, ranging from 100 to 2000.
+4. `rl_dac`: learned policies using DDQN control population size (lambda) standalone across 6 problem sizes, ranging from 100 to 2000.
+
+More detail, please check [README](./resources/README.md).
+
 ### Training
 We divide our experiments into two groups:
 - Combinatorial action space
