@@ -34,7 +34,11 @@ OneMax-MPDAC/
 │   ├── models                      # Two fashions of DDQN used for training
 │   │   ├── combinatorial_ddqn.py   # Combinatorial action space
 │   │   └── factored_ddqn.py        # Factored action space
-│   ├── derive_mp_policy.py         # Contains functions to derive new multi-parameter control policy
+│   ├── derive_mp_policy.py         # Contains functions to derive new multi-parameter 
+│   ├── configs                     # Contains configurations for running experiments
+│   │   ├── onemax_n100_cmp.yml     # Example of a configuration for training combinatorial action representation on the problem size of 100
+│   │   ├── onemax_n100_fmp.yml     # Example of a configuration for training factored action representation on the problem size of 100
+control policy
 ├── requirements.txt                # List of dependencies
 ├── README.md                       # Project readme file
 └── LICENSE                         # License for the project
