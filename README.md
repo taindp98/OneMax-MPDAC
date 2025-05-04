@@ -78,10 +78,14 @@ To replicate the results reported in the paper, follow the notebook [test.ipynb]
 ### Baseline and Comparison
 We provide the runtimes of other methods including: `theory`, `irace`, `onefifth`, and `rl_dac`
 
-1. `theory`: theory-derived policy across 13 problem sizes, ranging from 100 to 40000.
-2. `irace`: static configuration tuned using irace across 13 problem sizes, ranging from 100 to 40000.
-3. `onefifth`: population size (lambda) is self-adjusted based on the one-fifth success rule across 6 problem sizes, ranging from 100 to 2000.
-4. `rl_dac`: learned policies using DDQN control population size (lambda) standalone across 6 problem sizes, ranging from 100 to 2000.
+|             | $\pi_{\text{theory}}$ | irace | 1/5-th| $\pi_{\lambda}$| $\pi_{\text{mp}}$       |
+|-------------|-----------------------------|------------|------------|-----------------------|---------------------------|
+| $n=100$     | 582.624 (118.51)            | 499.048 (86.38) | 619.724 (129.45) | 544.210 (122.64)    | **431.822** (83.19) |
+| $n=200$     | 1233.381 (193.11)           | 1043.198 (137.78)| 1308.223 (217.61)| 1142.246 (191.62)   | **896.654** (129.53)|
+| $n=500$     | 3237.161 (336.09)           | 2738.945 (231.34)| 3371.872 (351.06)| 3008.306 (315.77)   | **2407.196** (212.31)|
+| $n=1000$    | 6587.452 (530.32)           | 5586.548 (353.15)| 6886.090 (544.46)| 6337.662 (547.03)   | **5396.899** (410.87)|
+| $n=1500$    | 9970.525 (654.38)           | 8431.068 (437.00)| 10396.701 (714.40)| 9314.041 (619.95)    | **7456.682** (429.22)|
+| $n=2000$    | 13361.918 (777.03)          | 11332.382 (510.54)| 14016.436 (830.14)| 13216.518 (812.35)   | **10324.969** (575.38)|
 
 More detail, please check [README](./resources/README.md).
 
