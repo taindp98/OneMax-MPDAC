@@ -76,7 +76,7 @@ To replicate the results reported in the paper, follow the notebook [test.ipynb]
 **Note**: Please make sure you have the notebook kernel installed with the necessary packages.
 
 ### Baseline and Comparison
-We provide the runtimes of other methods including: `theory`, `irace`, `onefifth`, and `rl_dac`
+We provide the runtimes of other methods including: `theory`, `irace`, `onefifth`, and `rl_dac` ($\pi_{\lambda}$), where our $\pi_{\text{mp}}$ completely outperforms others.
 
 |             | $\pi_{\text{theory}}$ | irace | 1/5-th| $\pi_{\lambda}$| $\pi_{\text{mp}}$       |
 |-------------|-----------------------------|------------|------------|-----------------------|---------------------------|
