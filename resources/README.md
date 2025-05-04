@@ -21,3 +21,25 @@ We provide the runtimes of other methods including: `theory`, `irace`, `onefifth
 2. `irace`: static configuration tuned using irace across 13 problem sizes, ranging from 100 to 40000.
 3. `onefifth`: population size (lambda) is self-adjusted based on the one-fifth success rule across 6 problem sizes, ranging from 100 to 2000.
 4. `rl_dac`: learned policies using DDQN control population size (lambda) standalone across 6 problem sizes, ranging from 100 to 2000.
+
+```json
+## structure of comparison_method_runtimes.json
+{
+    "theory": {
+        100: [],
+        500: [],
+    },
+    "irace": {
+        100: [],
+        500: [],
+    },
+    "onefifth": {
+        100: [],
+        500: [],
+    },
+    "rl_dac": {
+        100: [],
+        500: [],
+    }
+}
+```
