@@ -1,6 +1,5 @@
 ## Extended version of DACBench
 We extend the [DACBench](https://github.com/automl/DACBench) package by introducing the (1+($\lambda$, $\lambda$))-GA algorithm on the OneMax problem.
-## 🎯 Implementation Structure
 
 Outline the structure of this package.
 
