@@ -12,19 +12,14 @@
 ## 💡 Introduction
 ![](./assets/interpretable_rl4dac.png)
 
-This repository accompanies the paper *"Discovering Interpretable Multi-Parameter Control Policies for Evolutionary Algorithms Using Deep Reinforcement Learning"*.
 
-**Motivation.** While deep reinforcement learning (deep-RL) has emerged as a state-of-the-art methodology for Dynamic Algorithm Configuration (DAC), rigorous theoretical analysis of parameter control remains largely restricted to single-parameter settings. Transitioning from single- to multi-parameter control is non-trivial: the combinatorial action space grows exponentially, standard RL approaches often fail to converge, and the resulting neural-network policies are uninterpretable black boxes.
+This repository accompanies the paper *"Discovering Interpretable Multi-Parameter Control Policies for Evolutionary Algorithms Using Deep Reinforcement Learning"* (IEEE Transactions on Evolutionary Computation). We study dynamic control of all four parameters $(\lambda_m, \alpha, \lambda_c, \beta)$ of the $(1+(\lambda,\lambda))$-GA on OneMax using deep-RL, and distill the learned behaviors into interpretable symbolic policies. Key contributions:
 
-**This work.** We address these challenges using the $(1+(\lambda,\lambda))$-GA optimizing OneMax as a representative case study — one of the few problems where a super-constant speedup of dynamic control over any static choice has been formally proven. We make the following contributions:
+- **RL enhancements:** factored action-space decomposition, adaptive reward shifting, and long-horizon discounting together enable effective multi-parameter learning.
+- **DDQN vs. PPO:** PPO collapses to a degenerate policy in this DAC setting; DDQN with the above enhancements consistently learns high-quality policies.
+- **Symbolic policy discovery:** a two-stage pipeline (hand-crafted equations → SMAC3 fine-tuning) yields a policy that outperforms all baselines, including IRACE, across problem sizes up to $n = 40{,}000$.
 
-- **Algorithm-agnostic enhancements.** We identify three key ingredients for effective multi-parameter RL in this combinatorial DAC setting: (i) *factored action-space decomposition*, which decouples the four parameters $(\lambda_m, \alpha, \lambda_c, \beta)$ into independent branches; (ii) *adaptive reward shifting*, which mitigates under-exploration; and (iii) *long-horizon discounting*, which prevents underestimation of future rewards. Their combination consistently yields the best performance.
-
-- **DDQN vs. PPO.** We conduct a comprehensive comparison of Double Deep Q-Networks (DDQN) and Proximal Policy Optimization (PPO). Despite PPO's general reputation for stability, it suffers from policy collapse in this DAC environment — collapsing to a degenerate policy of $\lambda_m = 1$ regardless of the reward shaping or architecture used. DDQN successfully navigates this challenge and produces high-quality behavioral trajectories suitable for downstream analysis.
-
-- **Two-stage symbolic policy discovery.** We distill the learned DDQN behaviors into an explicit, interpretable symbolic control policy through a two-stage process. In Stage I, we derive hand-crafted equations informed by the RL trajectories. In Stage II, we refine these equations via the automated configurator SMAC3, yielding a fine-tuned policy that surpasses the hand-crafted formulation by 6.8%. The resulting symbolic policy outperforms all existing baselines — including IRACE-based multi-parameter tuning — across problem sizes up to $n = 40{,}000$, while remaining mathematically tractable for running time analysis.
-
-The environment is built on top of [DACBench](https://github.com/automl/DACBench). See [dacbench/](dacbench/) for details on the extended $(1+(\lambda,\lambda))$-GA benchmark.
+The environment extends [DACBench](https://github.com/automl/DACBench). See [dacbench/](dacbench/) for details.
 
 ## 🎯 Repository Structure
 
@@ -152,35 +147,54 @@ DDQN with factored action space and adaptive reward shifting ($\pi_{\text{DDQN/m
 Detail of baselines and pre-computed runtimes, please check [resources/README.md](./resources/README.md).
 
 ### Training
-We divide our experiments into two groups:
-- Combinatorial action space
-- Factored action space
 
-The implementation of these families of DDQN can be found in [models](onemax_mpdac/models).
+Experiments are organized by algorithm (DDQN / PPO) and action space representation (combinatorial / factored). Implementations are in [onemax_mpdac/comb_ddqn.py](onemax_mpdac/comb_ddqn.py) and [onemax_mpdac/fact_ddqn.py](onemax_mpdac/fact_ddqn.py) for DDQN, and [onemax_mpdac/train_comb_ppo.py](onemax_mpdac/train_comb_ppo.py) / [onemax_mpdac/train_fact_ppo.py](onemax_mpdac/train_fact_ppo.py) for PPO.
 
-#### Experiment with the combinatorial action space
+#### DDQN
 
-```bash
-python onemax_mpdac/train_ddqn.py    \   ## Main Python script for training
-    --out-dir outputs         \   ## Set output directory
-    --config-file onemax_mpdac/configs/onemax_n100_cmp.yml \    ## For problem size of 100 and don't use the reward shifting
-    --gamma 0.9998                \   ## Set the value of discount factor
-    --seed 1 \                  ## Set random seed
-    --n-cpus 4                  ## Set number of CPUs for parallel processing
-```
-
-#### Experiment with the factored action space
+Both combinatorial and factored variants are trained with `train_ddqn.py`. Switch the config file to change the action space or enable adaptive reward shifting (`as`).
 
 ```bash
-python onemax_mpdac/train_ddqn.py    \   ## Main Python script for training
-    --out-dir outputs         \   ## Set output directory
-    --config-file onemax_mpdac/configs/onemax_n100_fmp.yml \    ## For problem size of 100 and don't use the reward shifting
-    --gamma 0.9998                \   ## Set the value of discount factor
-    --seed 1 \                  ## Set random seed
-    --n-cpus 4                  ## Set number of CPUs for parallel processing
+# Factored action space, adaptive reward shifting, n=100 (best setting from paper)
+python onemax_mpdac/train_ddqn.py \
+    --config-file onemax_mpdac/configs/onemax_n100_fmp_as.yml \
+    --gamma 0.9998 \
+    --seed 1 \
+    --out-dir outputs \
+    --n-cpus 4
+
+# Combinatorial action space, no reward shifting, n=100
+python onemax_mpdac/train_ddqn.py \
+    --config-file onemax_mpdac/configs/onemax_n100_cmp.yml \
+    --gamma 0.9998 \
+    --seed 1 \
+    --out-dir outputs \
+    --n-cpus 4
 ```
 
-**Note**: In case you'd like to use reward shifting mechanism, simply replace the configuration file by adding `as` at the end, for instance: `onemax_n100_cmp_as.yml`. 
+Config naming: `onemax_n{N}_{cmp|fmp}[_as].yml` where `cmp`/`fmp` = combinatorial/factored and `as` = adaptive reward shifting.
+
+#### PPO
+
+Combinatorial and factored variants use separate scripts. Both accept the same arguments; only the script and config differ.
+
+```bash
+# Factored action space, n=100
+python onemax_mpdac/train_fact_ppo.py \
+    --setting-file onemax_mpdac/configs/onemax_n100_mp_ppo.yml \
+    --seed 1 \
+    --out-dir outputs \
+    --n-cpus 4
+
+# Combinatorial action space, n=100
+python onemax_mpdac/train_comb_ppo.py \
+    --setting-file onemax_mpdac/configs/onemax_n100_mp_ppo_comb.yml \
+    --seed 1 \
+    --out-dir outputs \
+    --n-cpus 4
+```
+
+For reward-shifting ablations (bias $b \in \{0, -1, -3, -5, -7\}$), use the configs under `onemax_mpdac/configs/ablation_ppo/`, e.g. `onemax_n100_mp_ppo_fs7.yml`.
 
 ## Tune multi-parameter control policy
 
