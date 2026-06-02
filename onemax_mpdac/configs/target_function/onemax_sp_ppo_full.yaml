@@ -3,7 +3,7 @@ env_name: TheoryOM
 load: false
 save: false
 reward_curves: false
-out_dir: /store/nguyent/telo2025_results/autorl
+out_dir: autorl
 
 experiment:
     n_seeds:                        3

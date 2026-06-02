@@ -28,6 +28,6 @@ hydra:
           output_directory: ${hydra.sweep.dir}
     search_space: ${search_space}
   run:
-    dir: /store/nguyent/telo2025_results/autorl/ppo_smac/${now:%Y-%m-%d-%H-%M-%S}/
+    dir: ppo_smac/${now:%Y-%m-%d-%H-%M-%S}/
   sweep:
-    dir: /store/nguyent/telo2025_results/autorl/ppo_smac/${now:%Y-%m-%d-%H-%M-%S}/
+    dir: ppo_smac/${now:%Y-%m-%d-%H-%M-%S}/
