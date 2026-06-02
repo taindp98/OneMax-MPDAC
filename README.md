@@ -12,7 +12,7 @@
 ## 💡 Introduction
 ![](./assets/interpretable_rl4dac.png)
 
-This repository accompanies the paper *"Discovering Interpretable Multi-Parameter Control Policies for Evolutionary Algorithms Using Deep Reinforcement Learning"* (IEEE Transactions on Evolutionary Computation).
+This repository accompanies the paper *"Discovering Interpretable Multi-Parameter Control Policies for Evolutionary Algorithms Using Deep Reinforcement Learning"*.
 
 **Motivation.** While deep reinforcement learning (deep-RL) has emerged as a state-of-the-art methodology for Dynamic Algorithm Configuration (DAC), rigorous theoretical analysis of parameter control remains largely restricted to single-parameter settings. Transitioning from single- to multi-parameter control is non-trivial: the combinatorial action space grows exponentially, standard RL approaches often fail to converge, and the resulting neural-network policies are uninterpretable black boxes.
 
