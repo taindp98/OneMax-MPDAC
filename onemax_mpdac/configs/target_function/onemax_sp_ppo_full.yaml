@@ -1,0 +1,38 @@
+# @package _global_
+env_name: TheoryOM
+load: false
+save: false
+reward_curves: false
+out_dir: /store/nguyent/telo2025_results/autorl
+
+experiment:
+    n_seeds:                        3
+    n_cores:                        10
+    log_level:                      1
+    save_interval:                  2000
+    eval_interval:                  2000
+    eval_n_episodes:                100
+
+eval_env:
+    reward_choice:                  "minus_evals"
+
+algorithm:
+    agent_class: PPO
+    total_timesteps: 500000
+    policy_model: MlpPolicy
+    model_kwargs:
+        learning_rate: 0.0003
+        batch_size: 64
+        gamma: 0.99
+        n_steps: 2048
+        n_epochs: 10
+        gae_lambda: 0.95
+        clip_range: 0.2
+        clip_range_vf: null
+        normalize_advantage: True
+        ent_coef: 0.0
+        vf_coef: 0.5
+        max_grad_norm: 0.5
+        use_sde: False
+        sde_sample_freq: 1
+        reward_norm: false

@@ -5,7 +5,6 @@ import ConfigSpace.hyperparameters as CSH
 import gymnasium as gym
 import numpy as np
 import pandas as pd
-
 from dacbench.abstract_benchmark import AbstractBenchmark, objdict
 from dacbench.envs.theory import (
     RLSTheoryEnv,
@@ -14,42 +13,54 @@ from dacbench.envs.theory import (
     OLLGATheoryEnvDiscrete,
     OLLGAFactTheoryEnvDiscrete,
     OLLGACombTheoryEnvDiscrete,
+    OLLGATheoryPPOEnvDiscrete,
+    OLLGATheoryPPOEnv,
+    OLLGAIndependentPPOEnv,
 )
 
 from dacbench.envs.ablation_l1l2_theory import (
     OLLGAFactL1L2TheoryEnv,
     OLLGAFactL1L2TheoryEnvDiscrete,
+    OLLGAL1L2TheoryPPOEnvDiscrete,
 )
 
 from dacbench.envs.ablation_l1l2m_theory import (
     OLLGAFactL1L2MTheoryEnv,
     OLLGAFactL1L2MTheoryEnvDiscrete,
+    OLLGAL1L2MTheoryPPOEnvDiscrete,
 )
 
 from dacbench.envs.ablation_l1l2c_theory import (
     OLLGAFactL1L2CTheoryEnv,
     OLLGAFactL1L2CTheoryEnvDiscrete,
+    OLLGAL1L2CTheoryPPOEnvDiscrete,
 )
 
 from dacbench.envs.ablation_l1_theory import (
     OLLGAFactL1TheoryEnv,
     OLLGAFactL1TheoryEnvDiscrete,
+    OLLGAL1TheoryPPOEnvDiscrete,
 )
 
 from dacbench.envs.ablation_l1m_theory import (
     OLLGAFactL1MTheoryEnv,
     OLLGAFactL1MTheoryEnvDiscrete,
+    OLLGAL1MTheoryPPOEnvDiscrete,
 )
 
 from dacbench.envs.ablation_l1c_theory import (
     OLLGAFactL1CTheoryEnv,
     OLLGAFactL1CTheoryEnvDiscrete,
+    OLLGAL1CTheoryPPOEnvDiscrete,
 )
 
 from dacbench.envs.ablation_l1mc_theory import (
     OLLGAFactL1MCTheoryEnv,
     OLLGAFactL1MCTheoryEnvDiscrete,
+    OLLGAL1MCTheoryPPOEnvDiscrete,
 )
+
+from dacbench.envs.ablation_ppo import OLLGAPPOCombEnv, OLLGAPPOCombEnvDiscrete
 
 RLS_INFO = {
     "identifier": "RLSTheory",
@@ -77,7 +88,7 @@ RLS_THEORY_DEFAULTS = {
 
 class RLSTheoryBenchmark(AbstractBenchmark):
     """
-    Benchmark with various settings for RLS
+    Benchmark with various settings for (1+(lbd, lbd))-GA and RLS
     """
 
     def __init__(self, config=None):
@@ -161,10 +172,10 @@ class RLSTheoryBenchmark(AbstractBenchmark):
         self.env_class = globals()[self.config.env_class]
         assert self.env_class == RLSTheoryEnv or self.env_class == RLSTheoryEnvDiscrete
 
-        self.config["observation_space"] = (
-            self.create_observation_space_from_description(
-                self.config["observation_description"], self.env_class
-            )
+        self.config[
+            "observation_space"
+        ] = self.create_observation_space_from_description(
+            self.config["observation_description"], self.env_class
         )
 
     def create_observation_space_from_description(
@@ -263,7 +274,7 @@ OLLGA_THEORY_DEFAULTS = {
 
 class OLLGATheoryBenchmark(AbstractBenchmark):
     """
-    Benchmark for single parameter control in (1+(lbd, lbd))-GA
+    Benchmark with various settings for (1+(lbd, lbd))-GA and RLS
     """
 
     def __init__(self, config=None):
@@ -348,10 +359,10 @@ class OLLGATheoryBenchmark(AbstractBenchmark):
             self.env_class == OLLGATheoryEnv or self.env_class == OLLGATheoryEnvDiscrete
         )
 
-        self.config["observation_space"] = (
-            self.create_observation_space_from_description(
-                self.config["observation_description"], self.env_class
-            )
+        self.config[
+            "observation_space"
+        ] = self.create_observation_space_from_description(
+            self.config["observation_description"], self.env_class
         )
 
     def create_observation_space_from_description(
@@ -426,8 +437,7 @@ class OLLGATheoryBenchmark(AbstractBenchmark):
 
 class OLLGAFactTheoryBenchmark(OLLGATheoryBenchmark):
     """
-    Benchmark for multi-parameter control in (1+(lbd, lbd))-GA
-    The action space representation is in factored structure
+    Benchmark with various settings for (1+(lbd, lbd))-GA and RLS
     """
 
     def __init__(self, config=None):
@@ -513,17 +523,16 @@ class OLLGAFactTheoryBenchmark(OLLGATheoryBenchmark):
             or self.env_class == OLLGAFactTheoryEnvDiscrete
         )
 
-        self.config["observation_space"] = (
-            self.create_observation_space_from_description(
-                self.config["observation_description"], self.env_class
-            )
+        self.config[
+            "observation_space"
+        ] = self.create_observation_space_from_description(
+            self.config["observation_description"], self.env_class
         )
 
 
 class OLLGACombTheoryBenchmark(OLLGATheoryBenchmark):
     """
-    Benchmark for multi-parameter control in (1+(lbd, lbd))-GA
-    The action space representation is in combinatorial structure
+    Benchmark with various settings for (1+(lbd, lbd))-GA and RLS
     """
 
     def __init__(self, config=None):
@@ -609,17 +618,17 @@ class OLLGACombTheoryBenchmark(OLLGATheoryBenchmark):
             or self.env_class == OLLGACombTheoryEnvDiscrete
         )
 
-        self.config["observation_space"] = (
-            self.create_observation_space_from_description(
-                self.config["observation_description"], self.env_class
-            )
+        self.config[
+            "observation_space"
+        ] = self.create_observation_space_from_description(
+            self.config["observation_description"], self.env_class
         )
 
 
 ###### Ablations ######
 class OLLGAFactL1L2TheoryBenchmark(OLLGATheoryBenchmark):
     """
-    Benchmark with various settings for (1+(lbd, lbd))-GA
+    Benchmark with various settings for (1+(lbd, lbd))-GA and RLS
     """
 
     def __init__(self, config=None):
@@ -705,16 +714,16 @@ class OLLGAFactL1L2TheoryBenchmark(OLLGATheoryBenchmark):
             or self.env_class == OLLGAFactL1L2TheoryEnvDiscrete
         )
 
-        self.config["observation_space"] = (
-            self.create_observation_space_from_description(
-                self.config["observation_description"], self.env_class
-            )
+        self.config[
+            "observation_space"
+        ] = self.create_observation_space_from_description(
+            self.config["observation_description"], self.env_class
         )
 
 
 class OLLGAFactL1L2MTheoryBenchmark(OLLGATheoryBenchmark):
     """
-    Benchmark with various settings for (1+(lbd, lbd))-GA
+    Benchmark with various settings for (1+(lbd, lbd))-GA and RLS
     """
 
     def __init__(self, config=None):
@@ -800,16 +809,16 @@ class OLLGAFactL1L2MTheoryBenchmark(OLLGATheoryBenchmark):
             or self.env_class == OLLGAFactL1L2MTheoryEnvDiscrete
         )
 
-        self.config["observation_space"] = (
-            self.create_observation_space_from_description(
-                self.config["observation_description"], self.env_class
-            )
+        self.config[
+            "observation_space"
+        ] = self.create_observation_space_from_description(
+            self.config["observation_description"], self.env_class
         )
 
 
 class OLLGAFactL1L2CTheoryBenchmark(OLLGATheoryBenchmark):
     """
-    Benchmark with various settings for (1+(lbd, lbd))-GA
+    Benchmark with various settings for (1+(lbd, lbd))-GA and RLS
     """
 
     def __init__(self, config=None):
@@ -895,16 +904,16 @@ class OLLGAFactL1L2CTheoryBenchmark(OLLGATheoryBenchmark):
             or self.env_class == OLLGAFactL1L2CTheoryEnvDiscrete
         )
 
-        self.config["observation_space"] = (
-            self.create_observation_space_from_description(
-                self.config["observation_description"], self.env_class
-            )
+        self.config[
+            "observation_space"
+        ] = self.create_observation_space_from_description(
+            self.config["observation_description"], self.env_class
         )
 
 
 class OLLGAFactL1TheoryBenchmark(OLLGATheoryBenchmark):
     """
-    Benchmark with various settings for (1+(lbd, lbd))-GA
+    Benchmark with various settings for (1+(lbd, lbd))-GA and RLS
     """
 
     def __init__(self, config=None):
@@ -990,16 +999,16 @@ class OLLGAFactL1TheoryBenchmark(OLLGATheoryBenchmark):
             or self.env_class == OLLGAFactL1TheoryEnvDiscrete
         )
 
-        self.config["observation_space"] = (
-            self.create_observation_space_from_description(
-                self.config["observation_description"], self.env_class
-            )
+        self.config[
+            "observation_space"
+        ] = self.create_observation_space_from_description(
+            self.config["observation_description"], self.env_class
         )
 
 
 class OLLGAFactL1MTheoryBenchmark(OLLGATheoryBenchmark):
     """
-    Benchmark with various settings for (1+(lbd, lbd))-GA
+    Benchmark with various settings for (1+(lbd, lbd))-GA and RLS
     """
 
     def __init__(self, config=None):
@@ -1085,16 +1094,16 @@ class OLLGAFactL1MTheoryBenchmark(OLLGATheoryBenchmark):
             or self.env_class == OLLGAFactL1MTheoryEnvDiscrete
         )
 
-        self.config["observation_space"] = (
-            self.create_observation_space_from_description(
-                self.config["observation_description"], self.env_class
-            )
+        self.config[
+            "observation_space"
+        ] = self.create_observation_space_from_description(
+            self.config["observation_description"], self.env_class
         )
 
 
 class OLLGAFactL1CTheoryBenchmark(OLLGATheoryBenchmark):
     """
-    Benchmark with various settings for (1+(lbd, lbd))-GA
+    Benchmark with various settings for (1+(lbd, lbd))-GA and RLS
     """
 
     def __init__(self, config=None):
@@ -1180,16 +1189,16 @@ class OLLGAFactL1CTheoryBenchmark(OLLGATheoryBenchmark):
             or self.env_class == OLLGAFactL1CTheoryEnvDiscrete
         )
 
-        self.config["observation_space"] = (
-            self.create_observation_space_from_description(
-                self.config["observation_description"], self.env_class
-            )
+        self.config[
+            "observation_space"
+        ] = self.create_observation_space_from_description(
+            self.config["observation_description"], self.env_class
         )
 
 
 class OLLGAFactL1MCTheoryBenchmark(OLLGATheoryBenchmark):
     """
-    Benchmark with various settings for (1+(lbd, lbd))-GA
+    Benchmark with various settings for (1+(lbd, lbd))-GA and RLS
     """
 
     def __init__(self, config=None):
@@ -1275,8 +1284,974 @@ class OLLGAFactL1MCTheoryBenchmark(OLLGATheoryBenchmark):
             or self.env_class == OLLGAFactL1MCTheoryEnvDiscrete
         )
 
-        self.config["observation_space"] = (
-            self.create_observation_space_from_description(
-                self.config["observation_description"], self.env_class
+        self.config[
+            "observation_space"
+        ] = self.create_observation_space_from_description(
+            self.config["observation_description"], self.env_class
+        )
+
+
+## PPO Variants ##
+
+
+class OLLGATheoryPPOBenchmark(OLLGATheoryBenchmark):
+    """
+    Benchmark with various settings for (1+(lbd, lbd))-GA and RLS
+    """
+
+    def __init__(self, config=None):
+        """
+        Initialize a theory benchmark
+
+        Parameters
+        -------
+        base_config_name: str
+            OneLL's config name
+            possible values: see ../additional_configs/onell/configs.py
+        config : str
+            a dictionary, all options specified in this argument will override the one in base_config_name
+
+        """
+        super(OLLGATheoryPPOBenchmark, self).__init__()
+        self.config = objdict(OLLGA_THEORY_DEFAULTS)
+
+        if config:
+            for key, val in config.items():
+                self.config[key] = val
+
+        self.read_instance_set()
+
+        # initialise action space and environment class
+        cfg_space = CS.ConfigurationSpace()
+        if self.config.discrete_action:
+            assert (
+                "action_choices" in self.config
+            ), "ERROR: action_choices must be specified"
+            assert ("min_action" not in self.config) and (
+                "max_action" not in self.config
+            ), "ERROR: min_action and max_action should not be used for discrete action space"
+            assert (
+                "max_action" not in self.config
+            ), "ERROR: max_action should not be used for discrete action space"
+            self.config.env_class = "OLLGATheoryPPOEnvDiscrete"
+
+            # action choices can be a dictionary, where each item represent a list of actions for each instance, in this case, we need to make sure the number of actions is the same for all instances
+            if isinstance(self.config["action_choices"], dict):
+                cur_size = None  # number of actions of current instance
+                for inst_id, ls_acts in self.config["action_choices"].items():
+                    assert isinstance(ls_acts, np.ndarray) or isinstance(ls_acts, list)
+                    assert (cur_size is None) or (len(ls_acts) == cur_size)
+                    cur_size = len(ls_acts)
+                n_acts = cur_size
+
+            # the case where we have a single list of actions. For convenience, we will convert action_choices to a dictionary.
+            else:
+                assert isinstance(
+                    self.config["action_choices"], np.ndarray
+                ) or isinstance(self.config["action_choices"], list)
+                n_acts = len(self.config["action_choices"][0])
+                action_choices = {
+                    inst_id: self.config["action_choices"]
+                    for inst_id in self.config["instance_set"].keys()
+                }
+                self.config["action_choices"] = action_choices
+
+            action = CSH.UniformIntegerHyperparameter(name="", lower=0, upper=n_acts)
+            ## check single discrete or MultiDiscrete
+            if isinstance(self.config["action_choices"][0], int):
+                cfg_space.add_hyperparameter(action)
+                self.config["config_space"] = cfg_space
+            elif isinstance(self.config["action_choices"][0], list):
+                ## multi-discrete action space
+                self.config["action_space_class"] = "MultiDiscrete"
+                self.config["action_space_args"] = [
+                    [len(item) for item in self.config["action_choices"][0]]
+                ]
+            else:
+                raise ValueError(
+                    "action_choices must be a list of integers or a list of list of integers"
+                )
+        else:
+            assert (
+                "action_chocies" not in self.config
+            ), "ERROR: action_choices is only used for discrete action space"
+
+            self.config.env_class = "OLLGATheoryPPOEnv"
+            assert (
+                "action_bounds" in self.config
+            ), "ERROR: action_bounds must be specified"
+            assert isinstance(
+                self.config["action_bounds"], list
+            ), "ERROR: action_bounds must be a list"
+            for idx, (min_action, max_action) in enumerate(
+                self.config["action_bounds"]
+            ):
+                action = CSH.UniformFloatHyperparameter(
+                    name=f"Param_{idx}",
+                    lower=min_action,
+                    upper=max_action,
+                )
+                cfg_space.add_hyperparameter(action)
+            self.config["config_space"] = cfg_space
+
+        # create observation space
+        self.env_class = globals()[self.config.env_class]
+        assert (
+            self.env_class == OLLGATheoryPPOEnv
+            or self.env_class == OLLGATheoryPPOEnvDiscrete
+        )
+
+        self.config[
+            "observation_space"
+        ] = self.create_observation_space_from_description(
+            self.config["observation_description"], self.env_class
+        )
+
+
+class OLLGAL1L2TheoryPPOBenchmark(OLLGATheoryBenchmark):
+    """
+    Benchmark with various settings for (1+(lbd, lbd))-GA and RLS
+    """
+
+    def __init__(self, config=None):
+        """
+        Initialize a theory benchmark
+
+        Parameters
+        -------
+        base_config_name: str
+            OneLL's config name
+            possible values: see ../additional_configs/onell/configs.py
+        config : str
+            a dictionary, all options specified in this argument will override the one in base_config_name
+
+        """
+        super(OLLGAL1L2TheoryPPOBenchmark, self).__init__()
+        self.config = objdict(OLLGA_THEORY_DEFAULTS)
+
+        if config:
+            for key, val in config.items():
+                self.config[key] = val
+
+        self.read_instance_set()
+
+        # initialise action space and environment class
+        cfg_space = CS.ConfigurationSpace()
+        if self.config.discrete_action:
+            assert (
+                "action_choices" in self.config
+            ), "ERROR: action_choices must be specified"
+            assert ("min_action" not in self.config) and (
+                "max_action" not in self.config
+            ), "ERROR: min_action and max_action should not be used for discrete action space"
+            assert (
+                "max_action" not in self.config
+            ), "ERROR: max_action should not be used for discrete action space"
+            self.config.env_class = "OLLGAL1L2TheoryPPOEnvDiscrete"
+
+            # action choices can be a dictionary, where each item represent a list of actions for each instance, in this case, we need to make sure the number of actions is the same for all instances
+            if isinstance(self.config["action_choices"], dict):
+                cur_size = None  # number of actions of current instance
+                for inst_id, ls_acts in self.config["action_choices"].items():
+                    assert isinstance(ls_acts, np.ndarray) or isinstance(ls_acts, list)
+                    assert (cur_size is None) or (len(ls_acts) == cur_size)
+                    cur_size = len(ls_acts)
+                n_acts = cur_size
+
+            # the case where we have a single list of actions. For convenience, we will convert action_choices to a dictionary.
+            else:
+                assert isinstance(
+                    self.config["action_choices"], np.ndarray
+                ) or isinstance(self.config["action_choices"], list)
+                n_acts = len(self.config["action_choices"][0])
+                action_choices = {
+                    inst_id: self.config["action_choices"]
+                    for inst_id in self.config["instance_set"].keys()
+                }
+                self.config["action_choices"] = action_choices
+
+            action = CSH.UniformIntegerHyperparameter(name="", lower=0, upper=n_acts)
+
+        else:
+            assert (
+                "action_chocies" not in self.config
+            ), "ERROR: action_choices is only used for discrete action space"
+            assert ("min_action" in self.config) and (
+                "max_action" in self.config
+            ), "ERROR: min_action and max_action must be specified"
+            self.config.env_class = "OLLGATheoryEnv"
+            action = CSH.UniformFloatHyperparameter(
+                name="Step_size",
+                lower=self.config["min_action"],
+                upper=self.config["max_action"],
             )
+
+        # cfg_space.add_hyperparameter(action)
+        # self.config["config_space"] = cfg_space
+        self.config["action_space_class"] = "MultiDiscrete"
+        self.config["action_space_args"] = [
+            [len(item) for item in self.config["action_choices"][0]]
+        ]
+
+        # create observation space
+        self.env_class = globals()[self.config.env_class]
+        assert (
+            self.env_class == OLLGATheoryEnv
+            or self.env_class == OLLGAL1L2TheoryPPOEnvDiscrete
+        )
+
+        self.config[
+            "observation_space"
+        ] = self.create_observation_space_from_description(
+            self.config["observation_description"], self.env_class
+        )
+
+
+class OLLGAL1L2MTheoryPPOBenchmark(OLLGATheoryBenchmark):
+    """
+    Benchmark with various settings for (1+(lbd, lbd))-GA and RLS
+    """
+
+    def __init__(self, config=None):
+        """
+        Initialize a theory benchmark
+
+        Parameters
+        -------
+        base_config_name: str
+            OneLL's config name
+            possible values: see ../additional_configs/onell/configs.py
+        config : str
+            a dictionary, all options specified in this argument will override the one in base_config_name
+
+        """
+        super(OLLGAL1L2MTheoryPPOBenchmark, self).__init__()
+        self.config = objdict(OLLGA_THEORY_DEFAULTS)
+
+        if config:
+            for key, val in config.items():
+                self.config[key] = val
+
+        self.read_instance_set()
+
+        # initialise action space and environment class
+        cfg_space = CS.ConfigurationSpace()
+        if self.config.discrete_action:
+            assert (
+                "action_choices" in self.config
+            ), "ERROR: action_choices must be specified"
+            assert ("min_action" not in self.config) and (
+                "max_action" not in self.config
+            ), "ERROR: min_action and max_action should not be used for discrete action space"
+            assert (
+                "max_action" not in self.config
+            ), "ERROR: max_action should not be used for discrete action space"
+            self.config.env_class = "OLLGAL1L2MTheoryPPOEnvDiscrete"
+
+            # action choices can be a dictionary, where each item represent a list of actions for each instance, in this case, we need to make sure the number of actions is the same for all instances
+            if isinstance(self.config["action_choices"], dict):
+                cur_size = None  # number of actions of current instance
+                for inst_id, ls_acts in self.config["action_choices"].items():
+                    assert isinstance(ls_acts, np.ndarray) or isinstance(ls_acts, list)
+                    assert (cur_size is None) or (len(ls_acts) == cur_size)
+                    cur_size = len(ls_acts)
+                n_acts = cur_size
+
+            # the case where we have a single list of actions. For convenience, we will convert action_choices to a dictionary.
+            else:
+                assert isinstance(
+                    self.config["action_choices"], np.ndarray
+                ) or isinstance(self.config["action_choices"], list)
+                n_acts = len(self.config["action_choices"][0])
+                action_choices = {
+                    inst_id: self.config["action_choices"]
+                    for inst_id in self.config["instance_set"].keys()
+                }
+                self.config["action_choices"] = action_choices
+
+            action = CSH.UniformIntegerHyperparameter(name="", lower=0, upper=n_acts)
+
+        else:
+            assert (
+                "action_chocies" not in self.config
+            ), "ERROR: action_choices is only used for discrete action space"
+            assert ("min_action" in self.config) and (
+                "max_action" in self.config
+            ), "ERROR: min_action and max_action must be specified"
+            self.config.env_class = "OLLGATheoryEnv"
+            action = CSH.UniformFloatHyperparameter(
+                name="Step_size",
+                lower=self.config["min_action"],
+                upper=self.config["max_action"],
+            )
+
+        # cfg_space.add_hyperparameter(action)
+        # self.config["config_space"] = cfg_space
+        self.config["action_space_class"] = "MultiDiscrete"
+        self.config["action_space_args"] = [
+            [len(item) for item in self.config["action_choices"][0]]
+        ]
+
+        # create observation space
+        self.env_class = globals()[self.config.env_class]
+        assert (
+            self.env_class == OLLGATheoryEnv
+            or self.env_class == OLLGAL1L2MTheoryPPOEnvDiscrete
+        )
+
+        self.config[
+            "observation_space"
+        ] = self.create_observation_space_from_description(
+            self.config["observation_description"], self.env_class
+        )
+
+
+class OLLGAL1L2CTheoryPPOBenchmark(OLLGATheoryBenchmark):
+    """
+    Benchmark with various settings for (1+(lbd, lbd))-GA and RLS
+    """
+
+    def __init__(self, config=None):
+        """
+        Initialize a theory benchmark
+
+        Parameters
+        -------
+        base_config_name: str
+            OneLL's config name
+            possible values: see ../additional_configs/onell/configs.py
+        config : str
+            a dictionary, all options specified in this argument will override the one in base_config_name
+
+        """
+        super(OLLGAL1L2CTheoryPPOBenchmark, self).__init__()
+        self.config = objdict(OLLGA_THEORY_DEFAULTS)
+
+        if config:
+            for key, val in config.items():
+                self.config[key] = val
+
+        self.read_instance_set()
+
+        # initialise action space and environment class
+        cfg_space = CS.ConfigurationSpace()
+        if self.config.discrete_action:
+            assert (
+                "action_choices" in self.config
+            ), "ERROR: action_choices must be specified"
+            assert ("min_action" not in self.config) and (
+                "max_action" not in self.config
+            ), "ERROR: min_action and max_action should not be used for discrete action space"
+            assert (
+                "max_action" not in self.config
+            ), "ERROR: max_action should not be used for discrete action space"
+            self.config.env_class = "OLLGAL1L2CTheoryPPOEnvDiscrete"
+
+            # action choices can be a dictionary, where each item represent a list of actions for each instance, in this case, we need to make sure the number of actions is the same for all instances
+            if isinstance(self.config["action_choices"], dict):
+                cur_size = None  # number of actions of current instance
+                for inst_id, ls_acts in self.config["action_choices"].items():
+                    assert isinstance(ls_acts, np.ndarray) or isinstance(ls_acts, list)
+                    assert (cur_size is None) or (len(ls_acts) == cur_size)
+                    cur_size = len(ls_acts)
+                n_acts = cur_size
+
+            # the case where we have a single list of actions. For convenience, we will convert action_choices to a dictionary.
+            else:
+                assert isinstance(
+                    self.config["action_choices"], np.ndarray
+                ) or isinstance(self.config["action_choices"], list)
+                n_acts = len(self.config["action_choices"][0])
+                action_choices = {
+                    inst_id: self.config["action_choices"]
+                    for inst_id in self.config["instance_set"].keys()
+                }
+                self.config["action_choices"] = action_choices
+
+            action = CSH.UniformIntegerHyperparameter(name="", lower=0, upper=n_acts)
+
+        else:
+            assert (
+                "action_chocies" not in self.config
+            ), "ERROR: action_choices is only used for discrete action space"
+            assert ("min_action" in self.config) and (
+                "max_action" in self.config
+            ), "ERROR: min_action and max_action must be specified"
+            self.config.env_class = "OLLGATheoryEnv"
+            action = CSH.UniformFloatHyperparameter(
+                name="Step_size",
+                lower=self.config["min_action"],
+                upper=self.config["max_action"],
+            )
+
+        # cfg_space.add_hyperparameter(action)
+        # self.config["config_space"] = cfg_space
+        self.config["action_space_class"] = "MultiDiscrete"
+        self.config["action_space_args"] = [
+            [len(item) for item in self.config["action_choices"][0]]
+        ]
+
+        # create observation space
+        self.env_class = globals()[self.config.env_class]
+        assert (
+            self.env_class == OLLGATheoryEnv
+            or self.env_class == OLLGAL1L2CTheoryPPOEnvDiscrete
+        )
+
+        self.config[
+            "observation_space"
+        ] = self.create_observation_space_from_description(
+            self.config["observation_description"], self.env_class
+        )
+
+
+class OLLGAL1TheoryPPOBenchmark(OLLGATheoryBenchmark):
+    """
+    Benchmark with various settings for (1+(lbd, lbd))-GA and RLS
+    """
+
+    def __init__(self, config=None):
+        """
+        Initialize a theory benchmark
+
+        Parameters
+        -------
+        base_config_name: str
+            OneLL's config name
+            possible values: see ../additional_configs/onell/configs.py
+        config : str
+            a dictionary, all options specified in this argument will override the one in base_config_name
+
+        """
+        super(OLLGAL1TheoryPPOBenchmark, self).__init__()
+        self.config = objdict(OLLGA_THEORY_DEFAULTS)
+
+        if config:
+            for key, val in config.items():
+                self.config[key] = val
+
+        self.read_instance_set()
+
+        # initialise action space and environment class
+        cfg_space = CS.ConfigurationSpace()
+        if self.config.discrete_action:
+            assert (
+                "action_choices" in self.config
+            ), "ERROR: action_choices must be specified"
+            assert ("min_action" not in self.config) and (
+                "max_action" not in self.config
+            ), "ERROR: min_action and max_action should not be used for discrete action space"
+            assert (
+                "max_action" not in self.config
+            ), "ERROR: max_action should not be used for discrete action space"
+            self.config.env_class = "OLLGAL1TheoryPPOEnvDiscrete"
+
+            # action choices can be a dictionary, where each item represent a list of actions for each instance, in this case, we need to make sure the number of actions is the same for all instances
+            if isinstance(self.config["action_choices"], dict):
+                cur_size = None  # number of actions of current instance
+                for inst_id, ls_acts in self.config["action_choices"].items():
+                    assert isinstance(ls_acts, np.ndarray) or isinstance(ls_acts, list)
+                    assert (cur_size is None) or (len(ls_acts) == cur_size)
+                    cur_size = len(ls_acts)
+                n_acts = cur_size
+
+            # the case where we have a single list of actions. For convenience, we will convert action_choices to a dictionary.
+            else:
+                assert isinstance(
+                    self.config["action_choices"], np.ndarray
+                ) or isinstance(self.config["action_choices"], list)
+                n_acts = len(self.config["action_choices"][0])
+                action_choices = {
+                    inst_id: self.config["action_choices"]
+                    for inst_id in self.config["instance_set"].keys()
+                }
+                self.config["action_choices"] = action_choices
+
+            action = CSH.UniformIntegerHyperparameter(name="", lower=0, upper=n_acts)
+
+        else:
+            assert (
+                "action_chocies" not in self.config
+            ), "ERROR: action_choices is only used for discrete action space"
+            assert ("min_action" in self.config) and (
+                "max_action" in self.config
+            ), "ERROR: min_action and max_action must be specified"
+            self.config.env_class = "OLLGATheoryEnv"
+            action = CSH.UniformFloatHyperparameter(
+                name="Step_size",
+                lower=self.config["min_action"],
+                upper=self.config["max_action"],
+            )
+
+        # cfg_space.add_hyperparameter(action)
+        # self.config["config_space"] = cfg_space
+        self.config["action_space_class"] = "MultiDiscrete"
+        self.config["action_space_args"] = [
+            [len(item) for item in self.config["action_choices"][0]]
+        ]
+
+        # create observation space
+        self.env_class = globals()[self.config.env_class]
+        assert (
+            self.env_class == OLLGATheoryEnv
+            or self.env_class == OLLGAL1TheoryPPOEnvDiscrete
+        )
+
+        self.config[
+            "observation_space"
+        ] = self.create_observation_space_from_description(
+            self.config["observation_description"], self.env_class
+        )
+
+
+class OLLGAL1MTheoryPPOBenchmark(OLLGATheoryBenchmark):
+    """
+    Benchmark with various settings for (1+(lbd, lbd))-GA and RLS
+    """
+
+    def __init__(self, config=None):
+        """
+        Initialize a theory benchmark
+
+        Parameters
+        -------
+        base_config_name: str
+            OneLL's config name
+            possible values: see ../additional_configs/onell/configs.py
+        config : str
+            a dictionary, all options specified in this argument will override the one in base_config_name
+
+        """
+        super(OLLGAL1MTheoryPPOBenchmark, self).__init__()
+        self.config = objdict(OLLGA_THEORY_DEFAULTS)
+
+        if config:
+            for key, val in config.items():
+                self.config[key] = val
+
+        self.read_instance_set()
+
+        # initialise action space and environment class
+        cfg_space = CS.ConfigurationSpace()
+        if self.config.discrete_action:
+            assert (
+                "action_choices" in self.config
+            ), "ERROR: action_choices must be specified"
+            assert ("min_action" not in self.config) and (
+                "max_action" not in self.config
+            ), "ERROR: min_action and max_action should not be used for discrete action space"
+            assert (
+                "max_action" not in self.config
+            ), "ERROR: max_action should not be used for discrete action space"
+            self.config.env_class = "OLLGAL1MTheoryPPOEnvDiscrete"
+
+            # action choices can be a dictionary, where each item represent a list of actions for each instance, in this case, we need to make sure the number of actions is the same for all instances
+            if isinstance(self.config["action_choices"], dict):
+                cur_size = None  # number of actions of current instance
+                for inst_id, ls_acts in self.config["action_choices"].items():
+                    assert isinstance(ls_acts, np.ndarray) or isinstance(ls_acts, list)
+                    assert (cur_size is None) or (len(ls_acts) == cur_size)
+                    cur_size = len(ls_acts)
+                n_acts = cur_size
+
+            # the case where we have a single list of actions. For convenience, we will convert action_choices to a dictionary.
+            else:
+                assert isinstance(
+                    self.config["action_choices"], np.ndarray
+                ) or isinstance(self.config["action_choices"], list)
+                n_acts = len(self.config["action_choices"][0])
+                action_choices = {
+                    inst_id: self.config["action_choices"]
+                    for inst_id in self.config["instance_set"].keys()
+                }
+                self.config["action_choices"] = action_choices
+
+            action = CSH.UniformIntegerHyperparameter(name="", lower=0, upper=n_acts)
+
+        else:
+            assert (
+                "action_chocies" not in self.config
+            ), "ERROR: action_choices is only used for discrete action space"
+            assert ("min_action" in self.config) and (
+                "max_action" in self.config
+            ), "ERROR: min_action and max_action must be specified"
+            self.config.env_class = "OLLGATheoryEnv"
+            action = CSH.UniformFloatHyperparameter(
+                name="Step_size",
+                lower=self.config["min_action"],
+                upper=self.config["max_action"],
+            )
+
+        # cfg_space.add_hyperparameter(action)
+        # self.config["config_space"] = cfg_space
+        self.config["action_space_class"] = "MultiDiscrete"
+        self.config["action_space_args"] = [
+            [len(item) for item in self.config["action_choices"][0]]
+        ]
+
+        # create observation space
+        self.env_class = globals()[self.config.env_class]
+        assert (
+            self.env_class == OLLGATheoryEnv
+            or self.env_class == OLLGAL1MTheoryPPOEnvDiscrete
+        )
+
+        self.config[
+            "observation_space"
+        ] = self.create_observation_space_from_description(
+            self.config["observation_description"], self.env_class
+        )
+
+
+class OLLGAL1CTheoryPPOBenchmark(OLLGATheoryBenchmark):
+    """
+    Benchmark with various settings for (1+(lbd, lbd))-GA and RLS
+    """
+
+    def __init__(self, config=None):
+        """
+        Initialize a theory benchmark
+
+        Parameters
+        -------
+        base_config_name: str
+            OneLL's config name
+            possible values: see ../additional_configs/onell/configs.py
+        config : str
+            a dictionary, all options specified in this argument will override the one in base_config_name
+
+        """
+        super(OLLGAL1CTheoryPPOBenchmark, self).__init__()
+        self.config = objdict(OLLGA_THEORY_DEFAULTS)
+
+        if config:
+            for key, val in config.items():
+                self.config[key] = val
+
+        self.read_instance_set()
+
+        # initialise action space and environment class
+        cfg_space = CS.ConfigurationSpace()
+        if self.config.discrete_action:
+            assert (
+                "action_choices" in self.config
+            ), "ERROR: action_choices must be specified"
+            assert ("min_action" not in self.config) and (
+                "max_action" not in self.config
+            ), "ERROR: min_action and max_action should not be used for discrete action space"
+            assert (
+                "max_action" not in self.config
+            ), "ERROR: max_action should not be used for discrete action space"
+            self.config.env_class = "OLLGAL1CTheoryPPOEnvDiscrete"
+
+            # action choices can be a dictionary, where each item represent a list of actions for each instance, in this case, we need to make sure the number of actions is the same for all instances
+            if isinstance(self.config["action_choices"], dict):
+                cur_size = None  # number of actions of current instance
+                for inst_id, ls_acts in self.config["action_choices"].items():
+                    assert isinstance(ls_acts, np.ndarray) or isinstance(ls_acts, list)
+                    assert (cur_size is None) or (len(ls_acts) == cur_size)
+                    cur_size = len(ls_acts)
+                n_acts = cur_size
+
+            # the case where we have a single list of actions. For convenience, we will convert action_choices to a dictionary.
+            else:
+                assert isinstance(
+                    self.config["action_choices"], np.ndarray
+                ) or isinstance(self.config["action_choices"], list)
+                n_acts = len(self.config["action_choices"][0])
+                action_choices = {
+                    inst_id: self.config["action_choices"]
+                    for inst_id in self.config["instance_set"].keys()
+                }
+                self.config["action_choices"] = action_choices
+
+            action = CSH.UniformIntegerHyperparameter(name="", lower=0, upper=n_acts)
+
+        else:
+            assert (
+                "action_chocies" not in self.config
+            ), "ERROR: action_choices is only used for discrete action space"
+            assert ("min_action" in self.config) and (
+                "max_action" in self.config
+            ), "ERROR: min_action and max_action must be specified"
+            self.config.env_class = "OLLGATheoryEnv"
+            action = CSH.UniformFloatHyperparameter(
+                name="Step_size",
+                lower=self.config["min_action"],
+                upper=self.config["max_action"],
+            )
+
+        # cfg_space.add_hyperparameter(action)
+        # self.config["config_space"] = cfg_space
+        self.config["action_space_class"] = "MultiDiscrete"
+        self.config["action_space_args"] = [
+            [len(item) for item in self.config["action_choices"][0]]
+        ]
+
+        # create observation space
+        self.env_class = globals()[self.config.env_class]
+        assert (
+            self.env_class == OLLGATheoryEnv
+            or self.env_class == OLLGAL1CTheoryPPOEnvDiscrete
+        )
+
+        self.config[
+            "observation_space"
+        ] = self.create_observation_space_from_description(
+            self.config["observation_description"], self.env_class
+        )
+
+
+class OLLGAL1MCTheoryPPOBenchmark(OLLGATheoryBenchmark):
+    """
+    Benchmark with various settings for (1+(lbd, lbd))-GA and RLS
+    """
+
+    def __init__(self, config=None):
+        """
+        Initialize a theory benchmark
+
+        Parameters
+        -------
+        base_config_name: str
+            OneLL's config name
+            possible values: see ../additional_configs/onell/configs.py
+        config : str
+            a dictionary, all options specified in this argument will override the one in base_config_name
+
+        """
+        super(OLLGAL1MCTheoryPPOBenchmark, self).__init__()
+        self.config = objdict(OLLGA_THEORY_DEFAULTS)
+
+        if config:
+            for key, val in config.items():
+                self.config[key] = val
+
+        self.read_instance_set()
+
+        # initialise action space and environment class
+        cfg_space = CS.ConfigurationSpace()
+        if self.config.discrete_action:
+            assert (
+                "action_choices" in self.config
+            ), "ERROR: action_choices must be specified"
+            assert ("min_action" not in self.config) and (
+                "max_action" not in self.config
+            ), "ERROR: min_action and max_action should not be used for discrete action space"
+            assert (
+                "max_action" not in self.config
+            ), "ERROR: max_action should not be used for discrete action space"
+            self.config.env_class = "OLLGAL1MCTheoryPPOEnvDiscrete"
+
+            # action choices can be a dictionary, where each item represent a list of actions for each instance, in this case, we need to make sure the number of actions is the same for all instances
+            if isinstance(self.config["action_choices"], dict):
+                cur_size = None  # number of actions of current instance
+                for inst_id, ls_acts in self.config["action_choices"].items():
+                    assert isinstance(ls_acts, np.ndarray) or isinstance(ls_acts, list)
+                    assert (cur_size is None) or (len(ls_acts) == cur_size)
+                    cur_size = len(ls_acts)
+                n_acts = cur_size
+
+            # the case where we have a single list of actions. For convenience, we will convert action_choices to a dictionary.
+            else:
+                assert isinstance(
+                    self.config["action_choices"], np.ndarray
+                ) or isinstance(self.config["action_choices"], list)
+                n_acts = len(self.config["action_choices"][0])
+                action_choices = {
+                    inst_id: self.config["action_choices"]
+                    for inst_id in self.config["instance_set"].keys()
+                }
+                self.config["action_choices"] = action_choices
+
+            action = CSH.UniformIntegerHyperparameter(name="", lower=0, upper=n_acts)
+
+        else:
+            assert (
+                "action_chocies" not in self.config
+            ), "ERROR: action_choices is only used for discrete action space"
+            assert ("min_action" in self.config) and (
+                "max_action" in self.config
+            ), "ERROR: min_action and max_action must be specified"
+            self.config.env_class = "OLLGATheoryEnv"
+            action = CSH.UniformFloatHyperparameter(
+                name="Step_size",
+                lower=self.config["min_action"],
+                upper=self.config["max_action"],
+            )
+
+        # cfg_space.add_hyperparameter(action)
+        # self.config["config_space"] = cfg_space
+        self.config["action_space_class"] = "MultiDiscrete"
+        self.config["action_space_args"] = [
+            [len(item) for item in self.config["action_choices"][0]]
+        ]
+
+        # create observation space
+        self.env_class = globals()[self.config.env_class]
+        assert (
+            self.env_class == OLLGATheoryEnv
+            or self.env_class == OLLGAL1MCTheoryPPOEnvDiscrete
+        )
+
+        self.config[
+            "observation_space"
+        ] = self.create_observation_space_from_description(
+            self.config["observation_description"], self.env_class
+        )
+
+
+## Independent PPO benchmarks for (1+(lbd, lbd))-GA variants
+class OLLGAIndependentPPOBenchmark(OLLGATheoryBenchmark):
+    """
+    Benchmark with various settings for (1+(lbd, lbd))-GA and RLS
+    """
+
+    def __init__(self, config=None):
+        """
+        Initialize a theory benchmark
+
+        Parameters
+        -------
+        base_config_name: str
+            OneLL's config name
+            possible values: see ../additional_configs/onell/configs.py
+        config : str
+            a dictionary, all options specified in this argument will override the one in base_config_name
+
+        """
+        super(OLLGAIndependentPPOBenchmark, self).__init__()
+        self.config = objdict(OLLGA_THEORY_DEFAULTS)
+
+        if config:
+            for key, val in config.items():
+                self.config[key] = val
+
+        self.read_instance_set()
+
+        # initialise action space and environment class
+        cfg_space = CS.ConfigurationSpace()
+
+        assert (
+            "action_chocies" not in self.config
+        ), "ERROR: action_choices is only used for discrete action space"
+
+        self.config.env_class = "OLLGAIndependentPPOEnv"
+        assert "action_bounds" in self.config, "ERROR: action_bounds must be specified"
+        assert isinstance(
+            self.config["action_bounds"], list
+        ), "ERROR: action_bounds must be a list"
+        for idx, (min_action, max_action) in enumerate(self.config["action_bounds"]):
+            action = CSH.UniformFloatHyperparameter(
+                name=f"Param_{idx}",
+                lower=min_action,
+                upper=max_action,
+            )
+            cfg_space.add_hyperparameter(action)
+        self.config["config_space"] = cfg_space
+
+        # create observation space
+        self.env_class = globals()[self.config.env_class]
+        assert self.env_class == OLLGAIndependentPPOEnv
+
+        self.config[
+            "observation_space"
+        ] = self.create_observation_space_from_description(
+            self.config["observation_description"], self.env_class
+        )
+
+
+## PPO Combinatorial action space benchmarks for (1+(lbd, lbd))-GA variants
+class OLLGAPPOCombBenchmark(OLLGATheoryBenchmark):
+    """
+    Benchmark with various settings for (1+(lbd, lbd))-GA and RLS
+    """
+
+    def __init__(self, config=None):
+        """
+        Initialize a theory benchmark
+
+        Parameters
+        -------
+        base_config_name: str
+            OneLL's config name
+            possible values: see ../additional_configs/onell/configs.py
+        config : str
+            a dictionary, all options specified in this argument will override the one in base_config_name
+
+        """
+        super(OLLGAPPOCombBenchmark, self).__init__()
+        self.config = objdict(OLLGA_THEORY_DEFAULTS)
+
+        if config:
+            for key, val in config.items():
+                self.config[key] = val
+
+        self.read_instance_set()
+
+        # initialise action space and environment class
+        cfg_space = CS.ConfigurationSpace()
+        if self.config.discrete_action:
+            assert (
+                "action_choices" in self.config
+            ), "ERROR: action_choices must be specified"
+            assert ("min_action" not in self.config) and (
+                "max_action" not in self.config
+            ), "ERROR: min_action and max_action should not be used for discrete action space"
+            assert (
+                "max_action" not in self.config
+            ), "ERROR: max_action should not be used for discrete action space"
+            self.config.env_class = "OLLGAPPOCombEnvDiscrete"
+
+            # action choices can be a dictionary, where each item represent a list of actions for each instance, in this case, we need to make sure the number of actions is the same for all instances
+            if isinstance(self.config["action_choices"], dict):
+                cur_size = None  # number of actions of current instance
+                for inst_id, ls_acts in self.config["action_choices"].items():
+                    assert isinstance(ls_acts, np.ndarray) or isinstance(ls_acts, list)
+                    assert (cur_size is None) or (len(ls_acts) == cur_size)
+                    cur_size = len(ls_acts)
+                n_acts = cur_size
+
+            # the case where we have a single list of actions. For convenience, we will convert action_choices to a dictionary.
+            else:
+                assert isinstance(
+                    self.config["action_choices"], np.ndarray
+                ) or isinstance(self.config["action_choices"], list)
+                n_acts = len(self.config["action_choices"][0])
+                action_choices = {
+                    inst_id: self.config["action_choices"]
+                    for inst_id in self.config["instance_set"].keys()
+                }
+                self.config["action_choices"] = action_choices
+
+            action = CSH.UniformIntegerHyperparameter(name="", lower=0, upper=n_acts)
+
+        else:
+            assert (
+                "action_chocies" not in self.config
+            ), "ERROR: action_choices is only used for discrete action space"
+            assert ("min_action" in self.config) and (
+                "max_action" in self.config
+            ), "ERROR: min_action and max_action must be specified"
+            self.config.env_class = "OLLGAPPOCombEnv"
+            action = CSH.UniformFloatHyperparameter(
+                name="Step_size",
+                lower=self.config["min_action"],
+                upper=self.config["max_action"],
+            )
+
+        cfg_space.add_hyperparameter(action)
+        self.config["config_space"] = cfg_space
+
+        # create observation space
+        self.env_class = globals()[self.config.env_class]
+        assert (
+            self.env_class == OLLGAPPOCombEnv
+            or self.env_class == OLLGAPPOCombEnvDiscrete
+        )
+
+        self.config[
+            "observation_space"
+        ] = self.create_observation_space_from_description(
+            self.config["observation_description"], self.env_class
         )

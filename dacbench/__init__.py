@@ -4,9 +4,9 @@ __version__ = "0.2.1"
 __contact__ = "automl.org"
 
 from dacbench.abstract_benchmark import AbstractBenchmark
-from dacbench.abstract_env import AbstractEnv, AbstractMADACEnv
+from dacbench.abstract_env import AbstractEnv
 
-__all__ = ["AbstractEnv", "AbstractMADACEnv", "AbstractBenchmark"]
+__all__ = ["AbstractEnv", "AbstractBenchmark"]
 
 # from gymnasium.envs.registration import register
 

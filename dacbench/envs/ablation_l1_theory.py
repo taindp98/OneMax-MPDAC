@@ -1,7 +1,7 @@
 import gymnasium as gym
 import numpy as np
 
-from dacbench.envs.theory import OLLGATheoryEnv
+from dacbench.envs.theory import OLLGATheoryEnv, HISTORY_LENGTH, weighted_stagnation
 
 
 class OLLGAFactL1TheoryEnv(OLLGATheoryEnv):
@@ -79,7 +79,8 @@ class OLLGAFactL1TheoryEnv(OLLGATheoryEnv):
 
             # check stopping criteria
             terminated = (self.total_evals >= self.max_evals) or (self.x.is_optimal())
-
+            self.history_fx.append(self.x.fitness)
+            self.history_lbd.append(mutation_size)
             # calculate reward
             if self.reward_choice == "imp_div_evals":
                 reward = (self.x.fitness - fitness_before_update - 0.5) / n_evals
@@ -97,19 +98,42 @@ class OLLGAFactL1TheoryEnv(OLLGATheoryEnv):
                 reward = self.x.fitness - fitness_before_update - 0.5
             elif self.reward_choice == "imp_minus_evals_scaling":
                 reward = (self.x.fitness - fitness_before_update - n_evals) / self.n
-            elif self.reward_choice == "imp_minus_evals_shifting":
-                # reward = (self.x.fitness - fitness_before_update - n_evals) - kwargs["shift"]
+            elif self.reward_choice == "imp_minus_evals":
                 reward = self.x.fitness - fitness_before_update - n_evals
-                reward -= 3
-            elif self.reward_choice == "imp_minus_evals_scaling_shifting":
+            elif self.reward_choice == "imp_minus_evals_shifting":
+                ## check if "shift" is provided in kwargs, if not, use fixed shift from config
+                if "shift" in kwargs:
+                    shift = kwargs["shift"]
+                    print(f"Using dynamic shift: {shift}")
+                else:                
+                    shift = self.config["fixed_shift"]
+                    print(f"Using fixed shift: {shift}")
                 reward = (
-                    (self.x.fitness - fitness_before_update - n_evals) / self.n
-                ) - kwargs["shift"]
-            self.log_reward.append(reward)
+                    self.x.fitness - fitness_before_update - n_evals + shift
+                )
+            elif self.reward_choice == "imp_minus_evals_penalty_shifting":
+                last_steps = [
+                    item.item() for item in list(self.history_fx)[-HISTORY_LENGTH:]
+                ]
+                stagnation_ratio = weighted_stagnation(last_steps)
 
-        # update histories
-        self.history_fx.append(self.x.fitness)
-        self.history_lbd.append(mutation_size)
+                if (
+                    (fitness_before_update / self.n >= 0.8)
+                    and (stagnation_ratio > 0.9)
+                    and (self.x.fitness == fitness_before_update)
+                ):
+                    shift = -64 * 2
+                    reward = (self.x.fitness - fitness_before_update - n_evals) + shift
+                    print(
+                        f"Last {HISTORY_LENGTH} steps: {last_steps}, Stagnation: {stagnation_ratio}"
+                    )
+                else:
+                    reward = self.x.fitness - fitness_before_update - n_evals
+            self.log_reward.append(reward)
+        else:
+            # update histories
+            self.history_fx.append(self.x.fitness)
+            self.history_lbd.append(mutation_size)
 
         # update logs
         self.log_r.append(mutation_size)
@@ -210,3 +234,28 @@ class OLLGAFactL1TheoryEnvDiscrete(OLLGAFactL1TheoryEnv):
         lbd1_idx = actions[0]
         action_value = [self.action_choices[self.inst_id][0][lbd1_idx]]
         return super(OLLGAFactL1TheoryEnvDiscrete, self).step(action_value, **kwargs)
+
+
+## PPO Versions
+
+
+class OLLGAL1TheoryPPOEnvDiscrete(OLLGAFactL1TheoryEnv):
+    """OLLGA environment where the choices of lambda is discretised."""
+
+    def __init__(self, config, test_env=False):
+        """Init env."""
+        super(OLLGAL1TheoryPPOEnvDiscrete, self).__init__(config, test_env)
+        assert (
+            "action_choices" in config
+        ), "Error: action_choices must be specified in benchmark's config"
+        assert isinstance(
+            self.action_space, gym.spaces.MultiDiscrete
+        ), "Error: action space must be discrete"
+        self.discrete_action = True
+        self.action_choices = config["action_choices"]
+
+    def step(self, actions, **kwargs):
+        """Take step."""
+        lbd1_idx = actions[0]
+        action_value = [self.action_choices[self.inst_id][0][lbd1_idx]]
+        return super(OLLGAL1TheoryPPOEnvDiscrete, self).step(action_value, **kwargs)

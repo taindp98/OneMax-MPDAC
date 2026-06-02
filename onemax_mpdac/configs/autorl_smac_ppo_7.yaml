@@ -1,0 +1,33 @@
+
+defaults:
+  - _self_
+  - target_function: onemax_sp_ppo_7
+  - search_space: ppo_7
+  - override hydra/sweeper: HyperSMAC
+
+hydra:
+  sweeper:
+    n_trials: 500
+    budget_variable: algorithm.total_timesteps
+    sweeper_kwargs:
+      optimizer_kwargs:
+        smac_facade:
+          _target_: smac.facade.multi_fidelity_facade.MultiFidelityFacade
+          _partial_: true
+        intensifier: # The method used to decide which configurations to evaluate further (e.g., Successive Halving, Hyperband).
+          _target_: smac.facade.multi_fidelity_facade.MultiFidelityFacade.get_intensifier
+          _partial_: true
+          eta: 2 # Influences the number of stages in Hyperband.
+        scenario:
+          n_trials: ${hydra.sweeper.n_trials}
+          seed: 42
+          min_budget: 40000 # The minimum budget (e.g., epochs) for which a configuration is evaluated.
+          max_budget: 1000000 # The maximum budget for which a configuration is evaluated.
+          deterministic: true
+          n_workers: 1
+          output_directory: ${hydra.sweep.dir}
+    search_space: ${search_space}
+  run:
+    dir: /store/nguyent/telo2025_results/autorl/ppo_smac/${now:%Y-%m-%d-%H-%M-%S}/
+  sweep:
+    dir: /store/nguyent/telo2025_results/autorl/ppo_smac/${now:%Y-%m-%d-%H-%M-%S}/

@@ -1,0 +1,35 @@
+experiment:
+    n_cores:                        1
+    log_level:                      1
+    n_episodes:                     100000
+    n_steps:                        200000
+    save_interval:                  2000
+    eval_interval:                  2000
+    eval_n_episodes:                100    
+
+bench:
+    name:                           "OLLGAFactTheory"
+    discrete_action:                True
+    action_choices:                 
+        - [1, 2, 4, 8, 16, 32, 64]
+        - [0.25, 0.542, 0.833, 1.125, 1.417, 1.708, 2.0]
+        - [1, 2, 4, 8, 16, 32, 64]
+        - [0.25, 0.542, 0.833, 1.125, 1.417, 1.708, 2.0]
+    problem:                        "OneMax"
+    instance_set_path:              "om_ollga_500_medium.csv"
+    observation_description:        "n,f(x)"
+    reward_choice:                  "imp_minus_evals"
+    
+eval_env:
+    reward_choice:                  "minus_evals"
+    
+agent:
+    name:                           "factored_ddqn"
+    epsilon:                        0.2
+    begin_learning_after:           10000
+    batch_size:                     2048    
+    gamma:                          0.99
+    lr:                             0.001
+    loss_function:                  mse_loss
+    net_arch:                       [128,64]
+

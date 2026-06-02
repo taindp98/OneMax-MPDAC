@@ -3,7 +3,6 @@ from typing import Optional
 import numpy as np
 from joblib import Parallel, delayed
 from onemax_mpdac.utils import make_env
-from tqdm import tqdm
 
 
 def ollga_single_param(

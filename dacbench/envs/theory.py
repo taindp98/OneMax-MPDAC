@@ -7,6 +7,34 @@ import gymnasium as gym
 import numpy as np
 
 from dacbench.abstract_env import AbstractEnv
+from collections import Counter
+
+
+def weighted_stagnation(data_list):
+    """
+    Calculates Stagnation with Recency Bias.
+    Repetitions at the end of the list are penalized more heavily.
+
+    Range: 0.0 (No repetition) to 1.0 (Full repetition).
+    """
+    n = len(data_list)
+    if n <= 1:
+        return 0.0
+
+    current_penalty = 0
+    max_possible_penalty = 0
+
+    # Iterate from 1 to n-1
+    for i in range(1, n):
+        # We calculate the max penalty to normalize later (sum of all indices)
+        # Max penalty happens if list was ['A', 'A', 'A', 'A']
+        max_possible_penalty += i
+
+        # If the current item is the same as the previous, add index as weight
+        if data_list[i] == data_list[i - 1]:
+            current_penalty += i
+
+    return current_penalty / max_possible_penalty
 
 
 class BinaryProblem:
@@ -350,7 +378,9 @@ class LeadingOnes(BinaryProblem):
 
 
 MAX_INT = 1e8
-HISTORY_LENGTH = 5
+# HISTORY_LENGTH = 10 ## best for discrete action space
+HISTORY_LENGTH = 20
+PENALTY_VARIANCE = 0.01
 
 
 class RLSTheoryEnv(AbstractEnv):
@@ -671,6 +701,8 @@ class RLSTheoryEnv(AbstractEnv):
 class OLLGATheoryEnv(AbstractEnv):
     """
     Environment for (1+(lbd,lbd))-GA with population size.
+
+    Current assumption: we only consider (1+(lbd,lbd))-GAS, so there's only one parameter to tune (lbd)
     """
 
     def __init__(self, config, test_env=False) -> None:
@@ -706,6 +738,7 @@ class OLLGATheoryEnv(AbstractEnv):
             "imp_minus_evals_scaling",
             "imp_minus_evals_shifting",
             "imp_minus_evals_scaling_shifting",
+            "imp_minus_evals_penalty_shifting",
         ]
         self.reward_choice = config.reward_choice
         # print("Reward choice: " + self.reward_choice)
@@ -725,7 +758,7 @@ class OLLGATheoryEnv(AbstractEnv):
         for var_name in self.obs_var_names:
             if var_name == "n":
                 self.state_functions.append(lambda: self.n)
-            elif var_name in ["lbd"]:
+            elif var_name in ["lbd", "mut", "lbd_cross", "cross"]:
                 self.state_functions.append(
                     lambda his="history_" + var_name: vars(self)[his][-1]
                 )
@@ -777,10 +810,10 @@ class OLLGATheoryEnv(AbstractEnv):
 
         Returns
         -------
-            Two int values, e.g., 1, np.inf
+            Two int values, e.g., -np.inf, np.inf
 
         """
-        return 0, np.inf
+        return -np.inf, np.inf
 
     def reset_(self, seed=None, options={}):
         """
@@ -798,7 +831,7 @@ class OLLGATheoryEnv(AbstractEnv):
             self.max_evals = self.n_steps
         else:
             self.max_evals = int(0.8 * self.n * self.n)
-        self.logger.info("n:%d, max_evals:%d" % (self.n, self.max_evals))
+        # self.logger.info("n:%d, max_evals:%d" % (self.n, self.max_evals))
 
         # set random seed
         if "seed" in self.instance:
@@ -820,6 +853,10 @@ class OLLGATheoryEnv(AbstractEnv):
         self.history_fx = deque(
             [self.x.fitness] * HISTORY_LENGTH, maxlen=HISTORY_LENGTH
         )
+        ## dev history of parameters
+        self.history_mut = deque([0] * HISTORY_LENGTH, maxlen=HISTORY_LENGTH)
+        self.history_lbd_cross = deque([0] * HISTORY_LENGTH, maxlen=HISTORY_LENGTH)
+        self.history_cross = deque([0] * HISTORY_LENGTH, maxlen=HISTORY_LENGTH)
 
         # for debug only
         self.log_r = []
@@ -940,7 +977,7 @@ class OLLGATheoryEnv(AbstractEnv):
             elif self.reward_choice == "imp_minus_evals_scaling_shifting":
                 reward = (
                     (self.x.fitness - fitness_before_update - n_evals) / self.n
-                ) - kwargs["shift"]
+                ) + kwargs["shift"]
             self.log_reward.append(reward)
 
         # update histories
@@ -1082,7 +1119,8 @@ class OLLGAFactTheoryEnv(OLLGATheoryEnv):
 
             # check stopping criteria
             terminated = (self.total_evals >= self.max_evals) or (self.x.is_optimal())
-
+            # update histories
+            self.history_fx.append(self.x.fitness)
             # calculate reward
             if self.reward_choice == "imp_div_evals":
                 reward = (self.x.fitness - fitness_before_update - 0.5) / n_evals
@@ -1101,18 +1139,230 @@ class OLLGAFactTheoryEnv(OLLGATheoryEnv):
             elif self.reward_choice == "imp_minus_evals_scaling":
                 reward = (self.x.fitness - fitness_before_update - n_evals) / self.n
             elif self.reward_choice == "imp_minus_evals_shifting":
-                # reward = (self.x.fitness - fitness_before_update - n_evals) - kwargs["shift"]
-                reward = self.x.fitness - fitness_before_update - n_evals
-                reward -= 3
+                reward = (
+                    self.x.fitness - fitness_before_update - n_evals + kwargs["shift"]
+                )
+            elif self.reward_choice == "imp_minus_evals_penalty_shifting":
+                ## check the last 10 steps to see if there's any improvement
+                last_steps = [
+                    item.item() for item in list(self.history_fx)[-HISTORY_LENGTH:]
+                ]
+                stagnation_ratio = weighted_stagnation(last_steps)
+                print(
+                    f"Last {HISTORY_LENGTH} steps: {last_steps}, Stagnation: {stagnation_ratio}"
+                )
+                if stagnation_ratio > 0.9:
+                    shift = self.action_choices[self.inst_id][0][-1] * 2
+                    # print(f"No significant improvement in last {HISTORY_LENGTH} steps, applying shift of {shift}")
+                    reward = (self.x.fitness - fitness_before_update - n_evals) - shift
+                else:
+                    reward = self.x.fitness - fitness_before_update - n_evals
             elif self.reward_choice == "imp_minus_evals_scaling_shifting":
                 reward = (
                     (self.x.fitness - fitness_before_update - n_evals) / self.n
-                ) - kwargs["shift"]
+                ) + kwargs["shift"]
             self.log_reward.append(reward)
-
-        # update histories
-        self.history_fx.append(self.x.fitness)
+        else:
+            # update histories
+            self.history_fx.append(self.x.fitness)
         self.history_lbd.append(mutation_size)
+
+        # update logs
+        self.log_r.append(mutation_size)
+        self.log_fx.append(self.x.fitness)
+        self.log_reward.append(reward)
+
+        returned_info = {"msg": "", "values": {}}
+        if terminated or truncated:
+            if hasattr(self, "env_type"):
+                msg = "Env " + self.env_type + ". "
+            else:
+                msg = ""
+            msg += (
+                "Episode done: n=%d; obj=%d; init_obj=%d; evals=%d; max_evals=%d; steps=%d; r_min=%.1f; r_max=%.1f; r_mean=%.1f; R=%.4f"
+                % (
+                    self.n,
+                    self.x.fitness,
+                    self.init_obj,
+                    self.total_evals,
+                    self.max_evals,
+                    self.c_step,
+                    min(self.log_r),
+                    max(self.log_r),
+                    sum(self.log_r) / len(self.log_r),
+                    sum(self.log_reward),
+                )
+            )
+            # self.logger.info(msg)
+            returned_info["msg"] = msg
+            returned_info["values"] = {
+                "n": int(self.n),
+                "obj": int(self.x.fitness),
+                "init_obj": int(self.init_obj),
+                "evals": int(self.total_evals),
+                "max_evals": int(self.max_evals),
+                "steps": int(self.c_step),
+                "r_min": float(min(self.log_r)),
+                "r_max": float(max(self.log_r)),
+                "r_mean": float(sum(self.log_r) / len(self.log_r)),
+                "R": float(sum(self.log_reward)),
+                "log_r": [int(x) for x in self.log_r],
+                "log_fx": [int(x) for x in self.log_fx],
+                "log_reward": [float(x) for x in self.log_reward],
+            }
+
+        return self.get_state(), reward, truncated, terminated, returned_info
+
+
+class OLLGATheoryPPOEnv(OLLGATheoryEnv):
+    """
+    Environment for (1+(lbd,lbd))-GA with population size.
+
+    Current assumption: we only consider (1+(lbd,lbd))-GAS, so there's only one parameter to tune (lbd)
+    """
+
+    def __init__(self, config, test_env=False) -> None:
+        """
+        Initialize OLLGATheoryEnv.
+
+        Parameters
+        ----------
+        config : objdict
+            Environment configuration
+        test_env : bool
+            whether to use test mode
+
+        """
+        super(OLLGATheoryPPOEnv, self).__init__(config)
+
+    def step(self, actions, **kwargs):
+        """
+        Execute environment step.
+
+        Parameters
+        ----------
+        action : Box
+            action to execute
+
+        Returns
+        -------
+            state, reward, terminated, truncated, info
+            np.array, float, bool, bool, dict
+
+        """
+        truncated = super(OLLGATheoryEnv, self).step_()
+
+        fitness_before_update = self.x.fitness
+
+        # get lbd
+
+        # if lbd is out of range
+        stop = False
+        if isinstance(actions, np.ndarray):
+            actions = actions.tolist()
+        # print(f"State: {fitness_before_update}", "Actions received:", actions)
+        if stop is False:
+            if len(actions) == 4:
+                mutation_size, alpha, crossover_size, gamma = actions
+                mutation_rate = alpha * mutation_size / self.n
+                crossover_rate = gamma / crossover_size
+            elif len(actions) == 1:
+                mutation_size = actions[0]
+                mutation_rate = mutation_size / self.n
+                crossover_size = mutation_size
+                crossover_rate = 1.0 / crossover_size
+            else:
+                raise ValueError(
+                    "Invalid number of actions provided. Expected 1 or 4, got %d."
+                    % len(actions)
+                )
+
+            ## clip rate to [0,1]
+            mutation_rate = np.clip(mutation_rate, 0, 1)
+            crossover_rate = np.clip(crossover_rate, 0, 1)
+            mutation_size = int(mutation_size)
+            crossover_size = int(crossover_size)
+            xprime, f_xprime, ne1 = self.x.mutate(
+                p=mutation_rate,
+                n_childs=mutation_size,
+                rng=self.np_random,
+            )
+            y, f_y, ne2 = self.x.crossover(
+                xprime=xprime,
+                p=crossover_rate,
+                n_childs=crossover_size,
+                rng=self.np_random,
+            )
+            n_evals = ne1 + ne2
+            # update x
+            if self.x.fitness <= y.fitness:
+                self.x = y
+
+            # update total number of evaluations
+            self.total_evals += n_evals
+
+            # check stopping criteria
+            if self.x.is_optimal():
+                terminated = True
+                # print("Optimal solution found!")
+            elif self.total_evals >= self.max_evals:
+                terminated = True
+                print(f"Maximum evaluations reached: {self.total_evals}")
+            else:
+                terminated = False
+            # terminated = (self.total_evals >= self.max_evals) or (self.x.is_optimal())
+            # update histories
+            self.history_fx.append(self.x.fitness)
+            # calculate reward
+            if self.reward_choice == "imp_div_evals":
+                reward = (self.x.fitness - fitness_before_update - 0.5) / n_evals
+            elif self.reward_choice == "imp_minus_evals":
+                reward = self.x.fitness - fitness_before_update - n_evals
+            elif self.reward_choice == "minus_evals":
+                reward = -n_evals
+            elif self.reward_choice == "minus_evals_normalised":
+                reward = -n_evals / self.max_evals
+            elif self.reward_choice == "imp_minus_evals_normalised":
+                reward = (
+                    self.x.fitness - fitness_before_update - n_evals
+                ) / self.max_evals
+            elif self.reward_choice == "imp":
+                reward = self.x.fitness - fitness_before_update - 0.5
+            elif self.reward_choice == "imp_minus_evals_scaling":
+                reward = (self.x.fitness - fitness_before_update - n_evals) / self.n
+            elif self.reward_choice == "imp_minus_evals_shifting":
+                ## hard code the shifting bias by problem size
+                shift = self.config["fixed_shift"]
+                print(f"Applying shift of {shift} for problem size {self.n}")
+                reward = (
+                    self.x.fitness - fitness_before_update - n_evals + shift
+                )
+            elif self.reward_choice == "imp_minus_evals_penalty_shifting":
+                last_steps = [
+                    item.item() for item in list(self.history_fx)[-HISTORY_LENGTH:]
+                ]
+                stagnation_ratio = weighted_stagnation(last_steps)
+
+                if (
+                    (fitness_before_update / self.n >= 0.8)
+                    and (stagnation_ratio > 0.9)
+                    and (self.x.fitness == fitness_before_update)
+                ):
+                    shift = -64 * 2
+                    reward = (self.x.fitness - fitness_before_update - n_evals) + shift
+                    print(
+                        f"Last {HISTORY_LENGTH} steps: {last_steps}, Stagnation: {stagnation_ratio}"
+                    )
+                else:
+                    reward = self.x.fitness - fitness_before_update - n_evals
+            self.log_reward.append(reward)
+        else:
+            self.history_fx.append(self.x.fitness)
+
+        self.history_lbd.append(mutation_size)
+        self.history_mut.append(mutation_rate)
+        self.history_cross.append(crossover_rate)
+        self.history_lbd_cross.append(crossover_size)
 
         # update logs
         self.log_r.append(mutation_size)
@@ -1210,7 +1460,8 @@ class OLLGATheoryEnvDiscrete(OLLGATheoryEnv):
 
     def step(self, actions, **kwargs):
         """Take step."""
-        action_value = self.action_choices[self.inst_id][0][actions[0]]
+        # action_value = self.action_choices[self.inst_id][0][actions[0]]   ## for multidiscrete
+        action_value = self.action_choices[self.inst_id][actions]  ## for discrete
         return super(OLLGATheoryEnvDiscrete, self).step(action_value, **kwargs)
 
 
@@ -1245,6 +1496,44 @@ class OLLGAFactTheoryEnvDiscrete(OLLGAFactTheoryEnv):
         return super(OLLGAFactTheoryEnvDiscrete, self).step(action_value, **kwargs)
 
 
+class OLLGATheoryPPOEnvDiscrete(OLLGATheoryPPOEnv):
+    """OLLGA environment where the choices of lambda is discretised."""
+
+    def __init__(self, config, test_env=False):
+        """Init env."""
+        super(OLLGATheoryPPOEnvDiscrete, self).__init__(config, test_env)
+        assert (
+            "action_choices" in config
+        ), "Error: action_choices must be specified in benchmark's config"
+        assert isinstance(
+            self.action_space, gym.spaces.MultiDiscrete
+        ), "Error: action space must be discrete"
+        # assert self.action_space.n == len(config["action_choices"][0][0]), (
+        #     "Error: action space's size (%d) must be equal to the len(action_choices) (%d)"
+        #     % (self.action_space.n, len(config["action_choices"][0][0]))
+        # )
+        self.discrete_action = True
+        self.action_choices = config["action_choices"]
+
+    def step(self, actions, **kwargs):
+        """Take step."""
+        if len(actions) == 4:
+            lbd1_idx, mutation_idx, lbd2_idx, crossover_idx = actions
+            action_value = [
+                self.action_choices[self.inst_id][0][lbd1_idx],
+                self.action_choices[self.inst_id][1][mutation_idx],
+                self.action_choices[self.inst_id][2][lbd2_idx],
+                self.action_choices[self.inst_id][3][crossover_idx],
+            ]
+        elif len(actions) == 1:
+            action_value = [self.action_choices[self.inst_id][0][actions[0]]]
+        else:
+            raise ValueError(
+                "Invalid action length: expected 1 or 4, got {}".format(len(actions))
+            )
+        return super(OLLGATheoryPPOEnvDiscrete, self).step(action_value, **kwargs)
+
+
 class OLLGACombTheoryEnvDiscrete(OLLGAFactTheoryEnv):
     """OLLGA environment where the choices of lambda is discretised."""
 
@@ -1275,3 +1564,188 @@ class OLLGACombTheoryEnvDiscrete(OLLGAFactTheoryEnv):
         """Take step."""
         action_value = self.action_choices[actions]
         return super(OLLGACombTheoryEnvDiscrete, self).step(action_value, **kwargs)
+
+
+## Independent Theory Envs
+class OLLGAIndependentPPOEnv(OLLGATheoryEnv):
+    """
+    Environment for (1+(lbd,lbd))-GA with population size.
+
+    Current assumption: we only consider (1+(lbd,lbd))-GAS, so there's only one parameter to tune (lbd)
+    """
+
+    def __init__(self, config, test_env=False) -> None:
+        """
+        Initialize OLLGATheoryEnv.
+
+        Parameters
+        ----------
+        config : objdict
+            Environment configuration
+        test_env : bool
+            whether to use test mode
+
+        """
+        super(OLLGAIndependentPPOEnv, self).__init__(config)
+
+    def step(self, actions, **kwargs):
+        """
+        Execute environment step.
+
+        Parameters
+        ----------
+        action : Box
+            action to execute
+
+        Returns
+        -------
+            state, reward, terminated, truncated, info
+            np.array, float, bool, bool, dict
+
+        """
+        truncated = super(OLLGATheoryEnv, self).step_()
+
+        fitness_before_update = self.x.fitness
+
+        # get lbd
+
+        # if lbd is out of range
+        stop = False
+        if isinstance(actions, np.ndarray):
+            actions = actions.tolist()
+        print(
+            f"State: {fitness_before_update}",
+            "Actions received independently:",
+            actions,
+        )
+        if stop is False:
+            # flip r bits
+            if len(actions) == 4:
+                ## get parameters independently
+                mutation_size, mutation_rate, crossover_size, crossover_rate = actions
+            else:
+                raise ValueError(
+                    "Invalid number of actions provided. Expected 1 or 4, got %d."
+                    % len(actions)
+                )
+            ## clip rate to [0,1]
+            mutation_rate = np.clip(mutation_rate, 0, 1)
+            crossover_rate = np.clip(crossover_rate, 0, 1)
+            mutation_size = int(np.round(mutation_size))
+            crossover_size = int(np.round(crossover_size))
+            xprime, f_xprime, ne1 = self.x.mutate(
+                p=mutation_rate,
+                n_childs=mutation_size,
+                rng=self.np_random,
+            )
+            y, f_y, ne2 = self.x.crossover(
+                xprime=xprime,
+                p=crossover_rate,
+                n_childs=crossover_size,
+                rng=self.np_random,
+            )
+            n_evals = ne1 + ne2
+            # update x
+            if self.x.fitness <= y.fitness:
+                self.x = y
+
+            # update total number of evaluations
+            self.total_evals += n_evals
+
+            # check stopping criteria
+            if self.x.is_optimal():
+                terminated = True
+                # print("Optimal solution found!")
+            elif self.total_evals >= self.max_evals:
+                terminated = True
+                print(f"Maximum evaluations reached: {self.total_evals}")
+            else:
+                terminated = False
+            # terminated = (self.total_evals >= self.max_evals) or (self.x.is_optimal())
+            # update histories
+            self.history_fx.append(self.x.fitness)
+            # calculate reward
+            if self.reward_choice == "imp_div_evals":
+                reward = (self.x.fitness - fitness_before_update - 0.5) / n_evals
+            elif self.reward_choice == "imp_minus_evals":
+                reward = self.x.fitness - fitness_before_update - n_evals
+            elif self.reward_choice == "minus_evals":
+                reward = -n_evals
+            elif self.reward_choice == "minus_evals_normalised":
+                reward = -n_evals / self.max_evals
+            elif self.reward_choice == "imp_minus_evals_normalised":
+                reward = (
+                    self.x.fitness - fitness_before_update - n_evals
+                ) / self.max_evals
+            elif self.reward_choice == "imp":
+                reward = self.x.fitness - fitness_before_update - 0.5
+            elif self.reward_choice == "imp_minus_evals_scaling":
+                reward = (self.x.fitness - fitness_before_update - n_evals) / self.n
+            elif self.reward_choice == "imp_minus_evals_penalty_shifting":
+                last_steps = [
+                    item.item() for item in list(self.history_fx)[-HISTORY_LENGTH:]
+                ]
+                stagnation_ratio = weighted_stagnation(last_steps)
+                print(
+                    f"Last {HISTORY_LENGTH} steps: {last_steps}, Stagnation: {stagnation_ratio}"
+                )
+                if stagnation_ratio > 0.9:
+                    shift = -64 * 2
+                    reward = (self.x.fitness - fitness_before_update - n_evals) + shift
+                else:
+                    reward = self.x.fitness - fitness_before_update - n_evals
+            self.log_reward.append(reward)
+        else:
+            # update histories
+            self.history_fx.append(self.x.fitness)
+            self.history_lbd.append(mutation_size)
+            ## add parameters histories
+            self.history_mut.append(mutation_rate)
+            self.history_cross.append(crossover_rate)
+            self.history_lbd_cross.append(crossover_size)
+
+        # update logs
+        self.log_r.append(mutation_size)
+        self.log_fx.append(self.x.fitness)
+        self.log_reward.append(reward)
+
+        returned_info = {"msg": "", "values": {}}
+        if terminated or truncated:
+            if hasattr(self, "env_type"):
+                msg = "Env " + self.env_type + ". "
+            else:
+                msg = ""
+            msg += (
+                "Episode done: n=%d; obj=%d; init_obj=%d; evals=%d; max_evals=%d; steps=%d; r_min=%.1f; r_max=%.1f; r_mean=%.1f; R=%.4f"
+                % (
+                    self.n,
+                    self.x.fitness,
+                    self.init_obj,
+                    self.total_evals,
+                    self.max_evals,
+                    self.c_step,
+                    min(self.log_r),
+                    max(self.log_r),
+                    sum(self.log_r) / len(self.log_r),
+                    sum(self.log_reward),
+                )
+            )
+            # self.logger.info(msg)
+            returned_info["msg"] = msg
+            returned_info["values"] = {
+                "n": int(self.n),
+                "obj": int(self.x.fitness),
+                "init_obj": int(self.init_obj),
+                "evals": int(self.total_evals),
+                "max_evals": int(self.max_evals),
+                "steps": int(self.c_step),
+                "r_min": float(min(self.log_r)),
+                "r_max": float(max(self.log_r)),
+                "r_mean": float(sum(self.log_r) / len(self.log_r)),
+                "R": float(sum(self.log_reward)),
+                "log_r": [int(x) for x in self.log_r],
+                "log_fx": [int(x) for x in self.log_fx],
+                "log_reward": [float(x) for x in self.log_reward],
+            }
+
+        return self.get_state(), reward, truncated, terminated, returned_info

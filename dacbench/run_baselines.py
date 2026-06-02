@@ -186,7 +186,7 @@ def run_policy(results_path, benchmark_name, num_episodes, policy, seeds=np.aran
         if benchmark_name == "CMAESBenchmark":
             experiment_name = f"csa_{s}"
         else:
-            experiment_name = f"optimal_{s}"
+            experiment_name = f"Baseline_{s}"
         logger = Logger(
             experiment_name=experiment_name, output_path=results_path / benchmark_name
         )

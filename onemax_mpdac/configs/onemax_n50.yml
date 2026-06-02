@@ -1,0 +1,27 @@
+experiment:
+    n_cores:                        1
+    log_level:                      1
+    n_episodes:                     100000
+    n_steps:                        500000
+    save_interval:                  2000
+    eval_interval:                  2000
+    eval_n_episodes:                50    
+
+bench:
+    name:                           "OLLGATheory"
+    discrete_action:                True
+    action_choices:                 [1, 2, 4, 8, 16, 32]
+    problem:                        "OneMax"
+    instance_set_path:              "om_ollga_50_random.csv"
+    observation_description:        "n,f(x)"
+    reward_choice:                  "imp_minus_evals_shifting"
+    seed:                           0
+    
+eval_env:
+    reward_choice:                  "minus_evals"
+    
+agent:
+    name:                           "ppo"
+    epsilon:                        0.2
+    begin_learning_after:           10000
+

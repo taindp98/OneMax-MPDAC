@@ -2,7 +2,7 @@ experiment:
     n_cores:                        1
     log_level:                      1
     n_episodes:                     100000
-    n_steps:                        50000
+    n_steps:                        200000
     save_interval:                  2000
     eval_interval:                  2000
     eval_n_episodes:                100    

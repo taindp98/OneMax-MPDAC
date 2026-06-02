@@ -98,13 +98,13 @@ class OLLGAFactL1MCTheoryEnv(OLLGATheoryEnv):
             elif self.reward_choice == "imp_minus_evals_scaling":
                 reward = (self.x.fitness - fitness_before_update - n_evals) / self.n
             elif self.reward_choice == "imp_minus_evals_shifting":
-                # reward = (self.x.fitness - fitness_before_update - n_evals) - kwargs["shift"]
-                reward = self.x.fitness - fitness_before_update - n_evals
-                reward -= 3
+                reward = (self.x.fitness - fitness_before_update - n_evals) + kwargs[
+                    "shift"
+                ]
             elif self.reward_choice == "imp_minus_evals_scaling_shifting":
                 reward = (
                     (self.x.fitness - fitness_before_update - n_evals) / self.n
-                ) - kwargs["shift"]
+                ) + kwargs["shift"]
             self.log_reward.append(reward)
 
         # update histories
@@ -214,3 +214,30 @@ class OLLGAFactL1MCTheoryEnvDiscrete(OLLGAFactL1MCTheoryEnv):
             self.action_choices[self.inst_id][2][crossover_idx],
         ]
         return super(OLLGAFactL1MCTheoryEnvDiscrete, self).step(action_value, **kwargs)
+
+
+## PPO Versions
+class OLLGAL1MCTheoryPPOEnvDiscrete(OLLGAFactL1MCTheoryEnv):
+    """OLLGA environment where the choices of lambda is discretised."""
+
+    def __init__(self, config, test_env=False):
+        """Init env."""
+        super(OLLGAL1MCTheoryPPOEnvDiscrete, self).__init__(config, test_env)
+        assert (
+            "action_choices" in config
+        ), "Error: action_choices must be specified in benchmark's config"
+        assert isinstance(
+            self.action_space, gym.spaces.MultiDiscrete
+        ), "Error: action space must be discrete"
+        self.discrete_action = True
+        self.action_choices = config["action_choices"]
+
+    def step(self, actions, **kwargs):
+        """Take step."""
+        lbd1_idx, mutation_idx, crossover_idx = actions
+        action_value = [
+            self.action_choices[self.inst_id][0][lbd1_idx],
+            self.action_choices[self.inst_id][1][mutation_idx],
+            self.action_choices[self.inst_id][2][crossover_idx],
+        ]
+        return super(OLLGAL1MCTheoryPPOEnvDiscrete, self).step(action_value, **kwargs)

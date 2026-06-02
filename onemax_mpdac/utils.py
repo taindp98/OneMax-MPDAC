@@ -286,3 +286,87 @@ def plot_policies(results_fpath: str):
         dpi=300,
         bbox_inches="tight",
     )
+
+class NormalizeActionWrapper(gym.Wrapper):
+    def __init__(
+        self, env, independent: bool = False, log_indices: list = [0, 1, 2, 3]
+    ):
+        """
+        :param env: The gym environment
+        :param independent: Toggle between your two bound sets
+        :param log_indices: List of indices to apply log-scaling to (e.g., [1, 3])
+        """
+        super().__init__(env)
+
+        # 1. Define Bounds
+        if independent:
+            print("Using independent action scaling")
+            self.original_low = np.array([1.0, 1e-4, 1.0, 1e-4], dtype=np.float32)
+            self.original_high = np.array([64, 0.1, 64, 1.0], dtype=np.float32)
+        else:
+            print("Using dependent action scaling")
+            self.original_low = np.array([1.0, 1e-2, 1.0, 1e-2], dtype=np.float32)
+            self.original_high = np.array([64, 2.0, 64, 2.0], dtype=np.float32)
+
+        print(f"Original action low: {self.original_low}")
+        print(f"Original action high: {self.original_high}")
+
+        # 2. Setup Log Scaling Logic
+        # Default to empty list if None
+        self.log_indices = log_indices if log_indices is not None else []
+        print(f"Log-scaling will be applied to dimensions: {self.log_indices}")
+        # Create a boolean mask for easy indexing: [False, True, False, True]
+        self.log_mask = np.zeros(self.original_low.shape, dtype=bool)
+        if self.log_indices:
+            self.log_mask[self.log_indices] = True
+            print(f"Applying LOG-SCALING to dimensions: {self.log_indices}")
+
+        # Pre-compute Log Bounds (Optimization)
+        # We only care about these values where log_mask is True, but calc all for simplicity
+        # Safety check: Log scaling requires strict positive lower bounds (>0)
+        if np.any(self.original_low[self.log_mask] <= 0):
+            raise ValueError(
+                "Log-scaling requires strictly positive lower bounds (low > 0)."
+            )
+
+        self.log_low_bound = np.log(self.original_low).astype(np.float32)
+        self.log_high_bound = np.log(self.original_high).astype(np.float32)
+
+        # 3. Tell PPO: "The action space is always -1 to 1"
+        self.action_space = gym.spaces.Box(
+            low=-1, high=1, shape=env.action_space.shape, dtype=np.float32
+        )
+
+    def action(self, action):
+        # 1. Clamp output to [-1, 1] for safety
+        action = np.clip(action, -1, 1)
+
+        # Prepare result array
+        scaled_action = np.empty_like(action)
+
+        # --- A. Handle LINEAR Dimensions (The False in mask) ---
+        # Formula: low + 0.5 * (act + 1) * (high - low)
+        linear_mask = ~self.log_mask
+        if np.any(linear_mask):
+            scaled_action[linear_mask] = self.original_low[linear_mask] + 0.5 * (
+                action[linear_mask] + 1
+            ) * (self.original_high[linear_mask] - self.original_low[linear_mask])
+
+        # --- B. Handle LOG Dimensions (The True in mask) ---
+        # Formula: exp( log_low + 0.5 * (act + 1) * (log_high - log_low) )
+        if np.any(self.log_mask):
+            # Interpolate in Log Space
+            current_log_val = self.log_low_bound[self.log_mask] + 0.5 * (
+                action[self.log_mask] + 1
+            ) * (self.log_high_bound[self.log_mask] - self.log_low_bound[self.log_mask])
+            # Convert back to Real Space
+            scaled_action[self.log_mask] = np.exp(current_log_val)
+
+        # 3. Final Clip to ensure floating point math didn't drift slightly out of bounds
+        scaled_action = np.clip(scaled_action, self.original_low, self.original_high)
+
+        return scaled_action
+
+    def step(self, action):
+        rescaled_action = self.action(action)
+        return self.env.step(rescaled_action)
